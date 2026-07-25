@@ -36,9 +36,9 @@ GitHub는 계정 비밀번호로는 클론/푸시를 허용하지 않습니다. 
 3. **Personal access tokens** → **Tokens (classic)**
 4. **Generate new token** → **Generate new token (classic)**
 5. 설정값
-    - Note: `hackathon`
-    - Expiration: `90 days`
-    - Select scopes: **`repo`** 체크 (이것만)
+   - Note: `hackathon`
+   - Expiration: `90 days`
+   - Select scopes: **`repo`** 체크 (이것만)
 6. 맨 아래 **Generate token** → 나온 문자열 **복사**
 > ⚠️ 토큰은 이 화면을 벗어나면 다시 볼 수 없습니다. 바로 복사해서 안전한 곳에 보관하세요.
 > 토큰은 비밀번호와 같습니다. **레포에 커밋하거나 팀 채널에 올리지 마세요.**
@@ -221,7 +221,20 @@ src/main/java/com/likelion/team4/
 - **Entity를 직접 응답으로 반환하지 않고 DTO를 사용**합니다.
 - `ddl-auto: update`로 설정되어 있어 Entity를 만들고 서버를 재시작하면 테이블이 자동 생성됩니다. 컬럼 삭제나 타입 변경은 자동 반영되지 않으니 그때는 직접 DB를 수정하세요.
 > ⚠️ **검색으로 찾은 자료가 Spring Boot 3 기준인지 확인하세요.** `javax.persistence`로 되어 있으면 구버전 자료입니다. Spring Boot 3부터는 **`jakarta.persistence`** 를 사용하며, `javax`는 컴파일되지 않습니다.
- 
+
+### 공통 응답 형식 — 백엔드 팀원들이 상의해서 결정해주세요
+
+**초기 세팅에는 포함되어 있지 않습니다.** 개발 시작 전에 백엔드 팀원끼리 상의해서 형식을 통일하고, 결정한 내용을 팀 채널에 공유해주세요.
+
+사람마다 응답 구조가 다르면 프론트에서 API마다 다르게 처리해야 해서 연동 단계에서 시간을 크게 잃습니다. 통일 여부보다 **합의된 기준이 있다는 것 자체가 중요합니다.**
+
+합의할 항목:
+
+- 성공 응답을 그대로 반환할지, `{ "data": ..., "message": ... }` 처럼 감쌀지
+- 에러 응답의 형식 (필드 이름, 에러 코드 사용 여부)
+- HTTP 상태 코드 사용 규칙 (생성 시 201 vs 200 등)
+  정한 형식은 `global/` 아래에 공통 클래스로 만들어두고 전원이 그것을 사용하면 어긋날 일이 없습니다. `global/exception/`도 비어 있으니 예외 처리 방식(`@RestControllerAdvice` 등)을 함께 정하면 좋습니다.
+
 ---
 
 ## 협업 규칙
