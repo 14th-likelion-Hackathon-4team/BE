@@ -14,14 +14,14 @@ import java.util.stream.Collectors;
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(CustomException.class)
-    public ResponseEntity<ApiResponse<Void>> handleCustomException(CustomException e) {
+    public ResponseEntity<ApiResponse<?>> handleCustomException(CustomException e) {
         ErrorCode errorCode = e.getErrorCode();
-        ApiResponse<Void> response = ApiResponse.error(errorCode.getCode(), errorCode.getMessage(), null);
+        ApiResponse<?> response = ApiResponse.error(errorCode.getCode(), errorCode.getMessage(), null);
         return ResponseEntity.status(errorCode.getStatus()).body(response);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ApiResponse<Void>> handleValidationException(MethodArgumentNotValidException e) {
+    public ResponseEntity<ApiResponse<?>> handleValidationException(MethodArgumentNotValidException e) {
         List<Map<String, String>> errors = e.getBindingResult().getFieldErrors().stream()
                 .map(fieldError -> Map.of(
                         "field", fieldError.getField(),
@@ -29,7 +29,7 @@ public class GlobalExceptionHandler {
                 ))
                 .collect(Collectors.toList());
 
-        ApiResponse<Void> response = ApiResponse.error(
+        ApiResponse<?> response = ApiResponse.error(
                 ErrorCode.INVALID_INPUT.getCode(),
                 ErrorCode.INVALID_INPUT.getMessage(),
                 errors
@@ -38,8 +38,8 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ApiResponse<Void>> handleException(Exception e) {
-        ApiResponse<Void> response = ApiResponse.error(
+    public ResponseEntity<ApiResponse<?>> handleException(Exception e) {
+        ApiResponse<?> response = ApiResponse.error(
                 ErrorCode.INTERNAL_SERVER_ERROR.getCode(),
                 ErrorCode.INTERNAL_SERVER_ERROR.getMessage(),
                 null
