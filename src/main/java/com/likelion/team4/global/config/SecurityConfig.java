@@ -25,7 +25,9 @@ public class SecurityConfig {
                                 "/api/v1/routinefit/auth/signup",
                                 "/api/v1/routinefit/auth/check-id",
                                 "/api/v1/routinefit/auth/login",
-                                "/api/v1/routinefit/auth/reissue"
+                                "/api/v1/routinefit/auth/reissue",
+                                "/swagger-ui/**",
+                                "/v3/api-docs/**"
                         ).permitAll()
                         // 나머지는 인증 필요
                         .anyRequest().authenticated()
