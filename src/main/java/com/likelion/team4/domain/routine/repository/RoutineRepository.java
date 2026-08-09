@@ -1,5 +1,5 @@
-package com.likelion.team4.domain.Routine.repository;
-import com.likelion.team4.domain.Routine.entity.Routine;
+package com.likelion.team4.domain.routine.repository;
+import com.likelion.team4.domain.routine.entity.Routine;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
