@@ -1,13 +1,13 @@
-package com.likelion.team4.domain.Routine.controller;
+package com.likelion.team4.domain.routine.controller;
 
-import com.likelion.team4.domain.Routine.dto.RoutineResponse;
-import com.likelion.team4.domain.Routine.service.RoutineService;
+import com.likelion.team4.domain.routine.dto.request.RoutineRequest;
+import com.likelion.team4.domain.routine.dto.response.RoutineResponse;
+import com.likelion.team4.domain.routine.service.RoutineService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -29,5 +29,13 @@ public class RoutineController {
             routines = routineService.getAllRoutines(userId);
         }
         return ResponseEntity.ok(routines);
+    }
+
+    @PostMapping
+    public ResponseEntity<RoutineResponse> createRoutine(
+            @RequestParam("userId") Long userId,
+            @RequestBody RoutineRequest request) {
+        RoutineResponse response = routineService.createRoutine(userId, request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 }

@@ -1,6 +1,6 @@
-package com.likelion.team4.domain.Routine.dto;
+package com.likelion.team4.domain.routine.dto.response;
+import com.likelion.team4.domain.routine.entity.Routine;
 
-import com.likelion.team4.domain.Routine.entity.Routine;
 import lombok.Builder;
 import lombok.Getter;
 
