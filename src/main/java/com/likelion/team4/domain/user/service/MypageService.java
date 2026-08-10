@@ -1,5 +1,6 @@
 package com.likelion.team4.domain.user.service;
 
+import com.likelion.team4.domain.user.dto.request.UpdateNicknameRequest;
 import com.likelion.team4.domain.user.dto.response.UserProfileResponse;
 import com.likelion.team4.domain.user.entity.User;
 import com.likelion.team4.domain.user.repository.UserRepository;
@@ -19,6 +20,14 @@ public class MypageService {
     @Transactional(readOnly = true)
     public UserProfileResponse getMyProfile(Long userId) {
         User user = getUserById(userId);
+        return new UserProfileResponse(user);
+    }
+
+    // 닉네임 변경
+    @Transactional
+    public UserProfileResponse updateNickname(Long userId, UpdateNicknameRequest request) {
+        User user = getUserById(userId);
+        user.updateNickname(request.getNickname());
         return new UserProfileResponse(user);
     }
 
