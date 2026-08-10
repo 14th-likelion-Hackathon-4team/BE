@@ -3,7 +3,6 @@ package com.likelion.team4.domain.routine.controller;
 import com.likelion.team4.domain.routine.dto.request.RoutineRequest;
 import com.likelion.team4.domain.routine.dto.response.RoutineResponse;
 import com.likelion.team4.domain.routine.service.RoutineService;
-import com.likelion.team4.domain.user.entity.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
