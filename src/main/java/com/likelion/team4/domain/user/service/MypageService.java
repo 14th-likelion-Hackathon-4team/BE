@@ -1,5 +1,6 @@
 package com.likelion.team4.domain.user.service;
 
+import com.likelion.team4.domain.user.dto.request.UpdateAlarmRequest;
 import com.likelion.team4.domain.user.dto.request.UpdateNicknameRequest;
 import com.likelion.team4.domain.user.dto.request.UpdatePasswordRequest;
 import com.likelion.team4.domain.user.dto.response.UserProfileResponse;
@@ -52,6 +53,22 @@ public class MypageService {
         // 3. 새 비밀번호 암호화 후 반영
         String encodedPassword = passwordEncoder.encode(request.getNewPassword());
         user.updatePassword(encodedPassword);
+    }
+
+    // 알림 설정 변경
+    @Transactional
+    public UserProfileResponse updateAlarmSettings(Long userId, UpdateAlarmRequest request) {
+        User user = getUserById(userId);
+
+        user.updateAlarmSettings(
+                request.getRoutineAlarmOn(),
+                request.getAltMissionReminderOn(),
+                request.getAlarmSound(),
+                request.getAlarmOffsetType(),
+                request.getAlarmOffsetMinutes()
+        );
+
+        return new UserProfileResponse(user);
     }
 
     private User getUserById(Long userId) {
