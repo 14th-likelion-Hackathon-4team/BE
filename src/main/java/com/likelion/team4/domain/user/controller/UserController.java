@@ -10,6 +10,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -54,5 +55,15 @@ public class UserController {
         String newAccessToken = userService.reissue(refreshToken);
         return ResponseEntity.ok(ApiResponse.success("S200", "토큰 재발급 성공",
                 java.util.Map.of("accessToken", newAccessToken)));
+    }
+
+    // 로그아웃
+    @PostMapping("/logout")
+    public ResponseEntity<ApiResponse<Object>> logout(
+            @AuthenticationPrincipal Long userId) { // Security Context에서 인증된 사용자의 ID를 가져옴
+
+        userService.logout(userId);
+
+        return ResponseEntity.ok(ApiResponse.success("S200", "로그아웃 성공", null)); //[cite: 3]
     }
 }
