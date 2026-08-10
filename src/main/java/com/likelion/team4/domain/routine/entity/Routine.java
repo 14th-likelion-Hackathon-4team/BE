@@ -1,8 +1,9 @@
-package com.likelion.team4.domain.Routine.entity;
+package com.likelion.team4.domain.routine.entity;
 
-import com.likelion.team4.domain.User.entity.User;
+import com.likelion.team4.domain.user.entity.User;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -57,4 +58,19 @@ public class Routine {
 
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
+
+    @Builder
+    public Routine(User user, String title, LocalTime performTime, String repeatDays, boolean alarm, boolean active, LocalDate startDate, LocalDate endDate, LocalTime alarmTime, String repeatType, Integer repeatCount) {
+        this.user = user;
+        this.title = title;
+        this.performTime = performTime;
+        this.repeatDays = repeatDays;
+        this.alarm = alarm;
+        this.active = active;
+        this.startDate = startDate;
+        this.endDate = endDate;
+        this.alarmTime = alarmTime;
+        this.repeatType = repeatType;
+        this.repeatCount = repeatCount;
+    }
 }

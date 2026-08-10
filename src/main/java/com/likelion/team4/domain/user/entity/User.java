@@ -6,8 +6,10 @@ import lombok.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "users")
+@Table(name = "Users")
 @Getter
+@Builder
+@AllArgsConstructor
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class User {
 
@@ -15,7 +17,7 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true, length = 50)
+    @Column(name = "login_id", nullable = false, length = 50)
     private String loginId;
 
     @Column(nullable = false, length = 255)
@@ -25,66 +27,44 @@ public class User {
     private String nickname;
 
     @Column(nullable = false, length = 20)
-    private String status; // ACTIVE, WITHDRAWN
+    private String status;
 
-    @Column(nullable = false)
-    private Boolean routineAlarmOn;
-
-    @Column(nullable = false)
-    private Boolean altMissionReminderOn;
-
-    @Column(nullable = false, length = 20)
-    private String alarmSound;
-
-    @Column(nullable = false, length = 20)
-    private String alarmOffsetType;
-
-    private Integer alarmOffsetMinutes;
-
-    @Column(nullable = false)
-    private Integer currentStreak;
-
-    @Column(nullable = false)
-    private Integer maxStreak;
-
-    @Column(length = 500)
-    private String refreshToken;
-
-    private LocalDateTime refreshTokenExpiresAt;
-
-    private LocalDateTime withdrawnAt;
-
-    @Column(nullable = false, updatable = false)
+    @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
-    @Column(nullable = false)
+    @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
-    @Builder
-    public User(String loginId, String password, String nickname) {
-        this.loginId = loginId;
-        this.password = password;
-        this.nickname = nickname;
-        this.status = "ACTIVE";
-        this.routineAlarmOn = true;
-        this.altMissionReminderOn = true;
-        this.alarmSound = "차분한벨";
-        this.alarmOffsetType = "1시간전";
-        this.currentStreak = 0;
-        this.maxStreak = 0;
-        this.createdAt = LocalDateTime.now();
-        this.updatedAt = LocalDateTime.now();
-    }
+    @Column(name = "current_streak", nullable = false)
+    private int currentStreak;
 
-    public void updateRefreshToken(String refreshToken, LocalDateTime expiresAt) {
+    @Column(name = "max_streak", nullable = false)
+    private int maxStreak;
+
+    @Column(name = "routine_alarm_on", nullable = false)
+    private boolean routineAlarmOn;
+
+    @Column(name = "alt_mission_reminder_on", nullable = false)
+    private boolean altMissionReminderOn;
+
+    @Column(name = "alarm_sound", nullable = false, length = 20)
+    private String alarmSound;
+
+    @Column(name = "alarm_offset_type", nullable = false, length = 20)
+    private String alarmOffsetType;
+
+    // NULL 허용 컬럼은 객체 타입(Integer) 사용
+    @Column(name = "alarm_offset_minutes")
+    private Integer alarmOffsetMinutes;
+
+    @Column(name = "refresh_token", length = 500)
+    private String refreshToken;
+
+    @Column(name = "refresh_token_expires_at")
+    private LocalDateTime refreshTokenExpiresAt;
+
+    public void updateRefreshToken(String refreshToken, LocalDateTime refreshTokenExpiresAt) {
         this.refreshToken = refreshToken;
-        this.refreshTokenExpiresAt = expiresAt;
-        this.updatedAt = LocalDateTime.now();
-    }
-
-    public void clearRefreshToken() {
-        this.refreshToken = null;
-        this.refreshTokenExpiresAt = null;
-        this.updatedAt = LocalDateTime.now();
+        this.refreshTokenExpiresAt = refreshTokenExpiresAt;
     }
 }
