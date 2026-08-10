@@ -77,4 +77,14 @@ public class User {
         this.password = encodedPassword;
         this.updatedAt = LocalDateTime.now();
     }
+
+    public void updateAlarmSettings(boolean routineAlarmOn, boolean altMissionReminderOn,
+                                    String alarmSound, String alarmOffsetType, Integer alarmOffsetMinutes) {
+        this.routineAlarmOn = routineAlarmOn;
+        this.altMissionReminderOn = altMissionReminderOn;
+        this.alarmSound = alarmSound;
+        this.alarmOffsetType = alarmOffsetType;
+        this.alarmOffsetMinutes = alarmOffsetMinutes;
+        this.updatedAt = LocalDateTime.now();
+    }
 }
