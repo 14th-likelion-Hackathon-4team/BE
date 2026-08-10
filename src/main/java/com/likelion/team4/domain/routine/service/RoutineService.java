@@ -118,4 +118,27 @@ public class RoutineService {
         // 5. 수정된 엔티티를 DTO로 변환하여 반환
         return RoutineResponse.from(routine);
     }
+
+    @Transactional // 쓰기 작업이므로 트랜잭션 적용
+    public RoutineResponse updateActiveStatus(Long userId, Long routineId, Boolean active) {
+        // 1. 루틴 ID로 조회
+        Routine routine = routineRepository.findById(routineId)
+                .orElseThrow(() -> new CustomException(ErrorCode.RESOURCE_NOT_FOUND));
+
+        // 2. 삭제된 루틴인지 검증 (소프트 딜리트 확인)
+        if (routine.getDeletedAt() != null) {
+            throw new CustomException(ErrorCode.RESOURCE_NOT_FOUND);
+        }
+
+        // 3. 본인의 루틴인지 권한 검증
+        if (!routine.getUser().getId().equals(userId)) {
+            throw new CustomException(ErrorCode.FORBIDDEN_ACCESS);
+        }
+
+        // 4. 엔티티 상태 변경
+        routine.updateActive(active);
+
+        // 5. 수정된 엔티티를 DTO로 변환하여 반환
+        return RoutineResponse.from(routine);
+    }
 }
