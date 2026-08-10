@@ -14,8 +14,11 @@ import com.likelion.team4.domain.routinelog.repository.RoutineLogRepository;
 import com.likelion.team4.global.exception.CustomException;
 import com.likelion.team4.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.reactive.function.client.WebClient;
 
 import java.util.List;
 import java.util.Map;
@@ -31,13 +34,15 @@ public class ChatService {
     private final AlternativeMissionRepository alternativeMissionRepository;
     private final RoutineLogRepository routineLogRepository;
 
+    @Value("${openai.api.key}")
+    private String openaiApiKey;
+
     // 1. 대화 시작
     @Transactional
     public ChatStartResponse startChat(Long routineLogId) {
         RoutineLog routineLog = routineLogRepository.findById(routineLogId)
                 .orElseThrow(() -> new CustomException(ErrorCode.RESOURCE_NOT_FOUND));
 
-        // 기존 대화 확인 → 있으면 재사용
         Optional<AiChat> existingChat = aiChatRepository
                 .findTopByRoutineLogIdOrderByCreatedAtDesc(routineLogId);
 
@@ -51,13 +56,11 @@ public class ChatService {
             return new ChatStartResponse(chat.getId(), routineLogId, false, messageResponses);
         }
 
-        // 새 대화 생성
         AiChat newChat = AiChat.builder()
                 .routineLog(routineLog)
                 .build();
         aiChatRepository.save(newChat);
 
-        // AI 첫 인사 메시지 저장
         AiChatMessage firstMessage = AiChatMessage.builder()
                 .aiChat(newChat)
                 .role("AI")
@@ -91,7 +94,7 @@ public class ChatService {
         return new ChatMessageResponse(message);
     }
 
-    // 3. 대체 미션 생성 (더미 데이터)
+    // 3. 대체 미션 생성 (GPT API 호출)
     @Transactional
     public MissionGenerateResponse generateMission(Long chatId) {
         AiChat chat = aiChatRepository.findById(chatId)
@@ -116,8 +119,8 @@ public class ChatService {
                 .findFirst()
                 .orElse("기타");
 
-        // 더미 데이터로 미션 생성 (나중에 GPT API로 교체)
-        Map<String, Object> missionData = generateDummyMission(causeTag);
+        // GPT API 호출
+        Map<String, Object> missionData = callGptApi(causeTag);
 
         AlternativeMission newMission = AlternativeMission.builder()
                 .aiChat(chat)
@@ -155,34 +158,50 @@ public class ChatService {
         return new MissionActionResponse(missionId, mission.getStatus(), routineLogStatus);
     }
 
-    // 더미 미션 생성 (GPT API 연동 전까지 사용)
-    private Map<String, Object> generateDummyMission(String causeTag) {
-        return switch (causeTag) {
-            case "약속" -> Map.of(
-                    "content", "약속 장소까지 걸어가기 + 단백질 쉐이크 한 잔",
-                    "durationMinutes", 15,
-                    "difficulty", "쉬움"
-            );
-            case "피로" -> Map.of(
-                    "content", "가벼운 스트레칭 5분",
-                    "durationMinutes", 5,
-                    "difficulty", "쉬움"
-            );
-            case "시간부족" -> Map.of(
-                    "content", "10분 압축 운동 (스쿼트 20개 + 팔굽혀펴기 10개)",
-                    "durationMinutes", 10,
-                    "difficulty", "보통"
-            );
-            case "기분" -> Map.of(
-                    "content", "좋아하는 음악 들으며 5분 산책",
-                    "durationMinutes", 5,
-                    "difficulty", "쉬움"
-            );
-            default -> Map.of(
-                    "content", "오늘 운동 대신 가벼운 스트레칭 10분 어떠세요?",
-                    "durationMinutes", 10,
-                    "difficulty", "쉬움"
-            );
-        };
+    // GPT API 호출
+    private Map<String, Object> callGptApi(String causeTag) {
+        WebClient webClient = WebClient.builder()
+                .baseUrl("https://api.openai.com")
+                .defaultHeader("Authorization", "Bearer " + openaiApiKey)
+                .defaultHeader("Content-Type", "application/json")
+                .build();
+
+        String prompt = String.format(
+                "사용자가 루틴을 못 지킨 이유: %s\n" +
+                        "이 상황에 맞는 짧고 실천 가능한 대체 미션을 제안해주세요.\n" +
+                        "반드시 아래 JSON 형식으로만 응답하세요. 다른 텍스트는 절대 포함하지 마세요:\n" +
+                        "{\"content\": \"미션 내용\", \"durationMinutes\": 숫자, \"difficulty\": \"쉬움 또는 보통 또는 어려움\"}",
+                causeTag
+        );
+
+        Map<String, Object> requestBody = Map.of(
+                "model", "gpt-4o-mini",
+                "max_tokens", 500,
+                "messages", List.of(Map.of("role", "user", "content", prompt))
+        );
+
+        try {
+            Map response = webClient.post()
+                    .uri("/v1/chat/completions")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .bodyValue(requestBody)
+                    .retrieve()
+                    .bodyToMono(Map.class)
+                    .block(java.time.Duration.ofSeconds(10));
+
+            List<Map<String, Object>> choices = (List<Map<String, Object>>) response.get("choices");
+            Map<String, Object> message = (Map<String, Object>) choices.get(0).get("message");
+            String text = (String) message.get("content");
+
+            // JSON 코드블록 제거 후 파싱
+            text = text.replaceAll("```json", "").replaceAll("```", "").trim();
+
+            com.fasterxml.jackson.databind.ObjectMapper mapper =
+                    new com.fasterxml.jackson.databind.ObjectMapper();
+            return mapper.readValue(text, Map.class);
+
+        } catch (Exception e) {
+            throw new CustomException(ErrorCode.LLM_TIMEOUT);
+        }
     }
 }
