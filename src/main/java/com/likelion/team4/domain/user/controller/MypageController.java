@@ -1,14 +1,14 @@
 package com.likelion.team4.domain.user.controller;
 
+import com.likelion.team4.domain.user.dto.request.UpdateNicknameRequest;
 import com.likelion.team4.domain.user.dto.response.UserProfileResponse;
 import com.likelion.team4.domain.user.service.MypageService;
 import com.likelion.team4.global.response.ApiResponse;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
@@ -22,5 +22,14 @@ public class MypageController {
             @AuthenticationPrincipal Long userId) {
         UserProfileResponse response = mypageService.getMyProfile(userId);
         return ResponseEntity.ok(ApiResponse.success("S200", "내 정보 조회 성공", response));
+    }
+
+    // 닉네임 변경
+    @PatchMapping("/me/nickname")
+    public ResponseEntity<ApiResponse<UserProfileResponse>> updateNickname(
+            @AuthenticationPrincipal Long userId,
+            @Valid @RequestBody UpdateNicknameRequest request) {
+        UserProfileResponse response = mypageService.updateNickname(userId, request);
+        return ResponseEntity.ok(ApiResponse.success("S200", "닉네임 변경 성공", response));
     }
 }
