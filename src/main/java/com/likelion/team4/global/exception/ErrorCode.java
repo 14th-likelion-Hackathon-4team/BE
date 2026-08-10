@@ -17,6 +17,7 @@ public enum ErrorCode {
 
     // 공통 리소스
     RESOURCE_NOT_FOUND(HttpStatus.NOT_FOUND, "E404", "요청한 리소스를 찾을 수 없습니다"),
+    FORBIDDEN_ACCESS(HttpStatus.FORBIDDEN, "E403", "해당 루틴에 접근할 권한이 없습니다"),
 
     // AI 대화
     ALREADY_PROCESSED_MISSION(HttpStatus.CONFLICT, "E409", "이미 처리된 미션입니다"),
