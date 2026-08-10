@@ -141,4 +141,24 @@ public class RoutineService {
         // 5. 수정된 엔티티를 DTO로 변환하여 반환
         return RoutineResponse.from(routine);
     }
+
+    @Transactional
+    public void deleteRoutine(Long userId, Long routineId) {
+        // 1. 루틴 ID로 조회 (없으면 404)
+        Routine routine = routineRepository.findById(routineId)
+                .orElseThrow(() -> new CustomException(ErrorCode.RESOURCE_NOT_FOUND));
+
+        // 2. 이미 삭제된 루틴인지 검증 (이미 삭제되었다면 404)
+        if (routine.getDeletedAt() != null) {
+            throw new CustomException(ErrorCode.RESOURCE_NOT_FOUND);
+        }
+
+        // 3. 본인의 루틴인지 권한 검증 (타인의 루틴이면 403)
+        if (!routine.getUser().getId().equals(userId)) {
+            throw new CustomException(ErrorCode.FORBIDDEN_ACCESS);
+        }
+
+        // 4. 소프트 삭제 처리
+        routine.deleteSoftly();
+    }
 }
