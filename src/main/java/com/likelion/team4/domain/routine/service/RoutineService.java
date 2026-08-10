@@ -63,4 +63,13 @@ public class RoutineService {
         // 4. 저장된 엔티티를 DTO로 변환하여 반환
         return RoutineResponse.from(savedRoutine);
     }
+
+    public RoutineResponse getRoutine(Long userId, Long routineId) {
+        // 1. 루틴 ID와 유저 ID로 유효한 루틴 단건 조회
+        Routine routine = routineRepository.findByIdAndUser_IdAndDeletedAtIsNull(routineId, userId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 루틴이거나 접근 권한이 없습니다."));
+
+        // 2. 조회된 엔티티를 DTO로 변환하여 반환
+        return RoutineResponse.from(routine);
+    }
 }
