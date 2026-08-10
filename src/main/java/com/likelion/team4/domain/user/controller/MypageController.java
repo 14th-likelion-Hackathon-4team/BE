@@ -1,5 +1,6 @@
 package com.likelion.team4.domain.user.controller;
 
+import com.likelion.team4.domain.user.dto.request.UpdateAlarmRequest;
 import com.likelion.team4.domain.user.dto.request.UpdateNicknameRequest;
 import com.likelion.team4.domain.user.dto.request.UpdatePasswordRequest;
 import com.likelion.team4.domain.user.dto.response.UserProfileResponse;
@@ -41,5 +42,14 @@ public class MypageController {
             @Valid @RequestBody UpdatePasswordRequest request) {
         mypageService.updatePassword(userId, request);
         return ResponseEntity.ok(ApiResponse.success("S200", "비밀번호 변경 성공", null));
+    }
+
+    // 알림 설정 변경
+    @PatchMapping("/me/notifications")
+    public ResponseEntity<ApiResponse<UserProfileResponse>> updateAlarmSettings(
+            @AuthenticationPrincipal Long userId,
+            @Valid @RequestBody UpdateAlarmRequest request) {
+        UserProfileResponse response = mypageService.updateAlarmSettings(userId, request);
+        return ResponseEntity.ok(ApiResponse.success("S200", "알림 설정 변경 성공", response));
     }
 }
