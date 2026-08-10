@@ -1,0 +1,207 @@
+package com.likelion.team4.domain.chat.service;
+
+import com.likelion.team4.domain.chat.dto.request.ChatMessageRequest;
+import com.likelion.team4.domain.chat.dto.request.MissionActionRequest;
+import com.likelion.team4.domain.chat.dto.response.*;
+import com.likelion.team4.domain.chat.entity.AiChat;
+import com.likelion.team4.domain.chat.entity.AiChatMessage;
+import com.likelion.team4.domain.chat.entity.AlternativeMission;
+import com.likelion.team4.domain.chat.repository.AiChatMessageRepository;
+import com.likelion.team4.domain.chat.repository.AiChatRepository;
+import com.likelion.team4.domain.chat.repository.AlternativeMissionRepository;
+import com.likelion.team4.domain.routinelog.entity.RoutineLog;
+import com.likelion.team4.domain.routinelog.repository.RoutineLogRepository;
+import com.likelion.team4.global.exception.CustomException;
+import com.likelion.team4.global.exception.ErrorCode;
+import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.MediaType;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.reactive.function.client.WebClient;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+@Service
+@RequiredArgsConstructor
+public class ChatService {
+
+    private final AiChatRepository aiChatRepository;
+    private final AiChatMessageRepository aiChatMessageRepository;
+    private final AlternativeMissionRepository alternativeMissionRepository;
+    private final RoutineLogRepository routineLogRepository;
+
+    @Value("${openai.api.key}")
+    private String openaiApiKey;
+
+    // 1. 대화 시작
+    @Transactional
+    public ChatStartResponse startChat(Long routineLogId) {
+        RoutineLog routineLog = routineLogRepository.findById(routineLogId)
+                .orElseThrow(() -> new CustomException(ErrorCode.RESOURCE_NOT_FOUND));
+
+        Optional<AiChat> existingChat = aiChatRepository
+                .findTopByRoutineLogIdOrderByCreatedAtDesc(routineLogId);
+
+        if (existingChat.isPresent()) {
+            AiChat chat = existingChat.get();
+            List<AiChatMessage> messages = aiChatMessageRepository
+                    .findByAiChatIdOrderByCreatedAtAsc(chat.getId());
+            List<ChatMessageResponse> messageResponses = messages.stream()
+                    .map(ChatMessageResponse::new)
+                    .collect(Collectors.toList());
+            return new ChatStartResponse(chat.getId(), routineLogId, false, messageResponses);
+        }
+
+        AiChat newChat = AiChat.builder()
+                .routineLog(routineLog)
+                .build();
+        aiChatRepository.save(newChat);
+
+        AiChatMessage firstMessage = AiChatMessage.builder()
+                .aiChat(newChat)
+                .role("AI")
+                .content("안녕하세요! 무엇을 도와드릴까요?")
+                .causeTag(null)
+                .build();
+        aiChatMessageRepository.save(firstMessage);
+
+        return new ChatStartResponse(
+                newChat.getId(),
+                routineLogId,
+                true,
+                List.of(new ChatMessageResponse(firstMessage))
+        );
+    }
+
+    // 2. 원인 답변 전송
+    @Transactional
+    public ChatMessageResponse sendMessage(Long chatId, ChatMessageRequest request) {
+        AiChat chat = aiChatRepository.findById(chatId)
+                .orElseThrow(() -> new CustomException(ErrorCode.RESOURCE_NOT_FOUND));
+
+        AiChatMessage message = AiChatMessage.builder()
+                .aiChat(chat)
+                .role("USER")
+                .content(request.getContent())
+                .causeTag(request.getCauseTag())
+                .build();
+
+        aiChatMessageRepository.save(message);
+        return new ChatMessageResponse(message);
+    }
+
+    // 3. 대체 미션 생성 (GPT API 호출)
+    @Transactional
+    public MissionGenerateResponse generateMission(Long chatId) {
+        AiChat chat = aiChatRepository.findById(chatId)
+                .orElseThrow(() -> new CustomException(ErrorCode.RESOURCE_NOT_FOUND));
+
+        // 이전 PENDING 미션 REJECTED 처리
+        Optional<AlternativeMission> pendingMission = alternativeMissionRepository
+                .findByAiChatIdAndStatus(chatId, "PENDING");
+
+        MissionResponse previousMission = null;
+        if (pendingMission.isPresent()) {
+            pendingMission.get().reject();
+            previousMission = new MissionResponse(pendingMission.get());
+        }
+
+        // 대화에서 원인 태그 가져오기
+        List<AiChatMessage> messages = aiChatMessageRepository
+                .findByAiChatIdOrderByCreatedAtAsc(chatId);
+        String causeTag = messages.stream()
+                .filter(m -> m.getRole().equals("USER"))
+                .map(AiChatMessage::getCauseTag)
+                .findFirst()
+                .orElse("기타");
+
+        // GPT API 호출
+        Map<String, Object> missionData = callGptApi(causeTag);
+
+        AlternativeMission newMission = AlternativeMission.builder()
+                .aiChat(chat)
+                .content((String) missionData.get("content"))
+                .durationMinutes((Integer) missionData.get("durationMinutes"))
+                .difficulty((String) missionData.get("difficulty"))
+                .build();
+        alternativeMissionRepository.save(newMission);
+
+        return new MissionGenerateResponse(new MissionResponse(newMission), previousMission);
+    }
+
+    // 4. 대체 미션 수락/거절
+    @Transactional
+    public MissionActionResponse handleMissionAction(Long missionId, MissionActionRequest request) {
+        AlternativeMission mission = alternativeMissionRepository.findById(missionId)
+                .orElseThrow(() -> new CustomException(ErrorCode.RESOURCE_NOT_FOUND));
+
+        if (!mission.getStatus().equals("PENDING")) {
+            throw new CustomException(ErrorCode.ALREADY_PROCESSED_MISSION);
+        }
+
+        String routineLogStatus;
+
+        if (request.getAction().equals("ACCEPT")) {
+            mission.accept();
+            routineLogStatus = "대체미션진행중";
+        } else if (request.getAction().equals("REJECT")) {
+            mission.reject();
+            routineLogStatus = "미완료";
+        } else {
+            throw new CustomException(ErrorCode.INVALID_INPUT);
+        }
+
+        return new MissionActionResponse(missionId, mission.getStatus(), routineLogStatus);
+    }
+
+    // GPT API 호출
+    private Map<String, Object> callGptApi(String causeTag) {
+        WebClient webClient = WebClient.builder()
+                .baseUrl("https://api.openai.com")
+                .defaultHeader("Authorization", "Bearer " + openaiApiKey)
+                .defaultHeader("Content-Type", "application/json")
+                .build();
+
+        String prompt = String.format(
+                "사용자가 루틴을 못 지킨 이유: %s\n" +
+                        "이 상황에 맞는 짧고 실천 가능한 대체 미션을 제안해주세요.\n" +
+                        "반드시 아래 JSON 형식으로만 응답하세요. 다른 텍스트는 절대 포함하지 마세요:\n" +
+                        "{\"content\": \"미션 내용\", \"durationMinutes\": 숫자, \"difficulty\": \"쉬움 또는 보통 또는 어려움\"}",
+                causeTag
+        );
+
+        Map<String, Object> requestBody = Map.of(
+                "model", "gpt-4o-mini",
+                "max_tokens", 500,
+                "messages", List.of(Map.of("role", "user", "content", prompt))
+        );
+
+        try {
+            Map response = webClient.post()
+                    .uri("/v1/chat/completions")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .bodyValue(requestBody)
+                    .retrieve()
+                    .bodyToMono(Map.class)
+                    .block(java.time.Duration.ofSeconds(10));
+
+            List<Map<String, Object>> choices = (List<Map<String, Object>>) response.get("choices");
+            Map<String, Object> message = (Map<String, Object>) choices.get(0).get("message");
+            String text = (String) message.get("content");
+
+            // JSON 코드블록 제거 후 파싱
+            text = text.replaceAll("```json", "").replaceAll("```", "").trim();
+
+            com.fasterxml.jackson.databind.ObjectMapper mapper =
+                    new com.fasterxml.jackson.databind.ObjectMapper();
+            return mapper.readValue(text, Map.class);
+
+        } catch (Exception e) {
+            throw new CustomException(ErrorCode.LLM_TIMEOUT);
+        }
+    }
+}

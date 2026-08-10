@@ -19,3 +19,7 @@ jwt:
   secret: "routinefit-secret-key-for-jwt-token-generation-2026"
   access-token-expiration: 3600000      # 1시간 (밀리초)
   refresh-token-expiration: 1209600000  # 2주 (밀리초)
+
+openai:
+  api:
+    key: ""
