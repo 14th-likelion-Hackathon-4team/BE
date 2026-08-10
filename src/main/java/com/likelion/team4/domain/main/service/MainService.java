@@ -1,12 +1,14 @@
 package com.likelion.team4.domain.main.service;
 
-import com.likelion.team4.domain.main.dto.MainResponse;
-import com.likelion.team4.domain.main.dto.TodayNotificationResponse;
-import com.likelion.team4.domain.main.dto.TodayRoutineResponse;
-import com.likelion.team4.domain.Routine.entity.Routine;
-import com.likelion.team4.domain.Routine.repository.RoutineRepository;
+import com.likelion.team4.domain.main.dto.*;
+import com.likelion.team4.domain.routine.entity.Routine;
+import com.likelion.team4.domain.routine.entity.RoutineRecord;
+import com.likelion.team4.domain.routine.repository.RoutineRecordRepository;
+import com.likelion.team4.domain.routine.repository.RoutineRepository;
 import com.likelion.team4.domain.main.entity.Notification;
 import com.likelion.team4.domain.main.repository.NotificationRepository;
+import com.likelion.team4.domain.user.entity.User;
+import com.likelion.team4.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,8 +24,13 @@ public class MainService {
 
     private final RoutineRepository routineRepository;
     private final NotificationRepository notificationRepository;
+    private final RoutineRecordRepository routineRecordRepository;
+    private final UserRepository userRepository;
 
     public MainResponse getMainPage(Long userId) {
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 유저입니다."));
 
         String today = getToday();
 
@@ -34,15 +41,26 @@ public class MainService {
                 );
 
         List<TodayRoutineResponse> todayRoutines = routines.stream()
-                .map(routine -> TodayRoutineResponse.builder()
-                        .routineId(routine.getId())
-                        .title(routine.getTitle())
-                        .performTime(routine.getPerformTime())
-                        .completed(false)
-                        .build())
+                .map(routine -> {
+                    boolean completed = routineRecordRepository
+                            .findByRoutine_IdAndRecordDate(
+                                    routine.getId(),
+                                    LocalDate.now()
+                            )
+                            .map(RoutineRecord::isCompleted)
+                            .orElse(false);
+
+                    return TodayRoutineResponse.builder()
+                            .routineId(routine.getId())
+                            .routineName(routine.getTitle())
+                            .scheduledTime(routine.getPerformTime())
+                            .completed(completed)
+                            .build();
+                })
                 .toList();
 
         return MainResponse.builder()
+                .userName(user.getNickname())
                 .todayRoutines(todayRoutines)
                 .build();
     }
@@ -59,7 +77,7 @@ public class MainService {
         };
     }
 
-    public List<TodayNotificationResponse> getTodayNotifications(Long userId) {
+    public TodayNotificationListResponse getTodayNotifications(Long userId) {
 
         LocalDate today = LocalDate.now();
 
@@ -74,14 +92,76 @@ public class MainService {
                                 end
                         );
 
-        return notifications.stream()
-                .map(notification -> TodayNotificationResponse.builder()
+        List<TodayNotificationResponse> response =
+                notifications.stream()
+                        .map(notification -> TodayNotificationResponse.builder()
+                                .notificationId(notification.getId())
+                                .content(notification.getContent())
+                                .read(notification.isRead())
+                                .createdAt(notification.getCreatedAt())
+                                .build())
+                        .toList();
+
+        boolean hasUnread = notifications.stream()
+                .anyMatch(notification -> !notification.isRead());
+
+        return TodayNotificationListResponse.builder()
+                .hasUnread(hasUnread)
+                .notifications(response)
+                .build();
+    }
+
+    @Transactional
+    public NotificationReadResponse readNotification(Long notificationId) {
+
+        Notification notification = notificationRepository.findById(notificationId)
+                .orElseThrow(() ->
+                        new IllegalArgumentException("알림을 찾을 수 없습니다.")
+                );
+
+        notification.read();
+
+        return NotificationReadResponse.builder()
+                .notificationId(notification.getId())
+                .isRead(notification.isRead())
+                .readAt(notification.getReadAt())
+                .build();
+    }
+    public SearchResponse search(Long userId, String keyword) {
+
+        List<Routine> routines =
+                routineRepository.findAllByUser_IdAndTitleContainingAndDeletedAtIsNull(
+                        userId,
+                        keyword
+                );
+
+        List<Notification> notifications =
+                notificationRepository
+                        .findAllByUser_IdAndContentContainingOrderByCreatedAtDesc(
+                                userId,
+                                keyword
+                        );
+
+        List<SearchRoutineResponse> routineResponses = routines.stream()
+                .map(routine -> SearchRoutineResponse.builder()
+                        .routineId(routine.getId())
+                        .title(routine.getTitle())
+                        .build())
+                .toList();
+
+        List<SearchNotificationResponse> notificationResponses = notifications.stream()
+                .map(notification -> SearchNotificationResponse.builder()
                         .notificationId(notification.getId())
                         .content(notification.getContent())
                         .read(notification.isRead())
                         .createdAt(notification.getCreatedAt())
                         .build())
                 .toList();
+
+        return SearchResponse.builder()
+                .routines(routineResponses)
+                .notifications(notificationResponses)
+                .build();
     }
 
 }

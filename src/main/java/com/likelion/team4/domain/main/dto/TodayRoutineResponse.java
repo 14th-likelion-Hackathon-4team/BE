@@ -13,9 +13,9 @@ public class TodayRoutineResponse {
 
     private Long routineId;
 
-    private String title;
+    private String routineName;
 
-    private LocalTime performTime;
+    private LocalTime scheduledTime;
 
     private boolean completed;
 }

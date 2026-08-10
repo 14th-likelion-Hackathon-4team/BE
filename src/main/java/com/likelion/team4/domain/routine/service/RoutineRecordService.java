@@ -1,0 +1,49 @@
+package com.likelion.team4.domain.routine.service;
+
+import com.likelion.team4.domain.routine.dto.response.RoutineCompleteResponse;
+import com.likelion.team4.domain.routine.entity.Routine;
+import com.likelion.team4.domain.routine.entity.RoutineRecord;
+import com.likelion.team4.domain.routine.repository.RoutineRecordRepository;
+import com.likelion.team4.domain.routine.repository.RoutineRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+
+@Service
+@RequiredArgsConstructor
+@Transactional
+public class RoutineRecordService {
+
+    private final RoutineRepository routineRepository;
+    private final RoutineRecordRepository routineRecordRepository;
+
+    public RoutineCompleteResponse completeRoutine(Long routineId) {
+
+        Routine routine = routineRepository.findById(routineId)
+                .orElseThrow(() -> new IllegalArgumentException("루틴을 찾을 수 없습니다."));
+
+        LocalDate today = LocalDate.now();
+        LocalDateTime completedAt = LocalDateTime.now();
+
+        RoutineRecord record = routineRecordRepository
+                .findByRoutine_IdAndRecordDate(routineId, today)
+                .orElseGet(() -> RoutineRecord.builder()
+                        .routine(routine)
+                        .recordDate(today)
+                        .completed(false)
+                        .build());
+
+        record.complete();
+
+        routineRecordRepository.save(record);
+
+        return RoutineCompleteResponse.builder()
+                .routineId(routineId)
+                .completed(record.isCompleted())
+                .completedAt(completedAt)
+                .build();
+    }
+}

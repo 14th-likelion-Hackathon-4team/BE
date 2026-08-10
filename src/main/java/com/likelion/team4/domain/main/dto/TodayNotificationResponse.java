@@ -1,5 +1,6 @@
 package com.likelion.team4.domain.main.dto;
 
+import com.likelion.team4.domain.main.entity.Notification;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -13,4 +14,13 @@ public class TodayNotificationResponse {
     private String content;
     private boolean read;
     private LocalDateTime createdAt;
+
+    public static TodayNotificationResponse from(Notification notification) {
+        return TodayNotificationResponse.builder()
+                .notificationId(notification.getId())
+                .content(notification.getContent())
+                .read(notification.isRead())
+                .createdAt(notification.getCreatedAt())
+                .build();
+    }
 }

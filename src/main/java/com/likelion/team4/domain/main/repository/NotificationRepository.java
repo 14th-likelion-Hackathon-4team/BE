@@ -14,4 +14,9 @@ public interface NotificationRepository
             LocalDateTime start,
             LocalDateTime end
     );
+
+    List<Notification> findAllByUser_IdAndContentContainingOrderByCreatedAtDesc(
+            Long userId,
+            String keyword
+    );
 }
