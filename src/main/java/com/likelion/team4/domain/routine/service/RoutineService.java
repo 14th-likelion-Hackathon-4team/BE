@@ -50,8 +50,8 @@ public class RoutineService {
                 .title(request.getTitle())
                 .performTime(request.getPerformTime())
                 .repeatDays(request.getRepeatDays())
-                .alarm(request.isAlarm())
-                .active(request.isActive())
+                .alarm(request.getAlarm())
+                .active(request.getActive())
                 .startDate(request.getStartDate())
                 .endDate(request.getEndDate())
                 .alarmTime(request.getAlarmTime())
@@ -82,6 +82,40 @@ public class RoutineService {
         }
 
         // 4. 조회된 엔티티를 DTO로 변환하여 반환
+        return RoutineResponse.from(routine);
+    }
+
+    @Transactional // 쓰기 작업이므로 트랜잭션 적용
+    public RoutineResponse updateRoutine(Long userId, Long routineId, RoutineRequest request) {
+        // 1. 루틴 ID로 조회
+        Routine routine = routineRepository.findById(routineId)
+                .orElseThrow(() -> new CustomException(ErrorCode.RESOURCE_NOT_FOUND));
+
+        // 2. 삭제된 루틴인지 검증 (소프트 딜리트 확인)
+        if (routine.getDeletedAt() != null) {
+            throw new CustomException(ErrorCode.RESOURCE_NOT_FOUND);
+        }
+
+        // 3. 본인의 루틴인지 권한 검증
+        if (!routine.getUser().getId().equals(userId)) {
+            throw new CustomException(ErrorCode.FORBIDDEN_ACCESS);
+        }
+
+        // 4. 엔티티 수정 (더티 체킹으로 인해 별도의 save 호출 생략 가능)
+        routine.update(
+                request.getTitle(),
+                request.getPerformTime(),
+                request.getRepeatDays(),
+                request.getAlarm(),
+                request.getActive(),
+                request.getStartDate(),
+                request.getEndDate(),
+                request.getAlarmTime(),
+                request.getRepeatType(),
+                request.getRepeatCount()
+        );
+
+        // 5. 수정된 엔티티를 DTO로 변환하여 반환
         return RoutineResponse.from(routine);
     }
 }
