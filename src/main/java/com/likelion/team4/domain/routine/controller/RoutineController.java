@@ -48,4 +48,14 @@ public class RoutineController {
         RoutineResponse response = routineService.getRoutine(userId, routineId);
         return ResponseEntity.ok(ApiResponse.success("S200", "루틴 상세 조회 성공", response));
     }
+
+    @PatchMapping("/{routineId}")
+    public ResponseEntity<ApiResponse<RoutineResponse>> updateRoutine(
+            @AuthenticationPrincipal Long userId,
+            @PathVariable("routineId") Long routineId,
+            @Valid @RequestBody RoutineRequest request) {
+
+        RoutineResponse response = routineService.updateRoutine(userId, routineId, request);
+        return ResponseEntity.ok(ApiResponse.success("S200", "루틴 수정 성공", response));
+    }
 }
