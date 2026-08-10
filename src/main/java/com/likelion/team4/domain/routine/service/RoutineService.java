@@ -6,6 +6,8 @@ import com.likelion.team4.domain.routine.entity.Routine;
 import com.likelion.team4.domain.routine.repository.RoutineRepository;
 import com.likelion.team4.domain.user.entity.User;
 import com.likelion.team4.domain.user.repository.UserRepository;
+import com.likelion.team4.global.exception.CustomException;
+import com.likelion.team4.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -40,7 +42,7 @@ public class RoutineService {
     public RoutineResponse createRoutine(Long userId, RoutineRequest request) {
         // 1. 유저 조회 (유저가 없을 경우 예외 처리)
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 유저입니다."));
+                .orElseThrow(() -> new CustomException(ErrorCode.RESOURCE_NOT_FOUND));
 
         // 2. Request DTO를 바탕으로 Routine 엔티티 생성
         Routine routine = Routine.builder()
@@ -65,11 +67,21 @@ public class RoutineService {
     }
 
     public RoutineResponse getRoutine(Long userId, Long routineId) {
-        // 1. 루틴 ID와 유저 ID로 유효한 루틴 단건 조회
-        Routine routine = routineRepository.findByIdAndUser_IdAndDeletedAtIsNull(routineId, userId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 루틴이거나 접근 권한이 없습니다."));
+        // 1. 404와 403을 구분하기 위해 루틴 ID로만 먼저 조회
+        Routine routine = routineRepository.findById(routineId)
+                .orElseThrow(() -> new CustomException(ErrorCode.RESOURCE_NOT_FOUND));
 
-        // 2. 조회된 엔티티를 DTO로 변환하여 반환
+        // 2. 삭제된 루틴인지 검증 (소프트 딜리트 확인)
+        if (routine.getDeletedAt() != null) {
+            throw new CustomException(ErrorCode.RESOURCE_NOT_FOUND);
+        }
+
+        // 3. 본인의 루틴인지 권한 검증
+        if (!routine.getUser().getId().equals(userId)) {
+            throw new CustomException(ErrorCode.FORBIDDEN_ACCESS);
+        }
+
+        // 4. 조회된 엔티티를 DTO로 변환하여 반환
         return RoutineResponse.from(routine);
     }
 }
