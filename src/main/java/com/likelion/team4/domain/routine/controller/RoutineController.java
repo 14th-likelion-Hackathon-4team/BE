@@ -3,9 +3,11 @@ package com.likelion.team4.domain.routine.controller;
 import com.likelion.team4.domain.routine.dto.request.RoutineRequest;
 import com.likelion.team4.domain.routine.dto.response.RoutineResponse;
 import com.likelion.team4.domain.routine.service.RoutineService;
+import com.likelion.team4.domain.user.entity.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -18,8 +20,7 @@ public class RoutineController {
 
     @GetMapping
     public ResponseEntity<List<RoutineResponse>> getRoutinesByDay(
-            // 임시로 설정(이후 JWT 토큰 이용할 예정)
-            @RequestParam("userId") Long userId,
+            @AuthenticationPrincipal Long userId,
             @RequestParam(value = "day", required = false) String day) {
         List<RoutineResponse> routines;
         if (day != null && !day.trim().isEmpty()) {
@@ -32,9 +33,18 @@ public class RoutineController {
 
     @PostMapping
     public ResponseEntity<RoutineResponse> createRoutine(
-            @RequestParam("userId") Long userId,
+            @AuthenticationPrincipal Long userId,
             @RequestBody RoutineRequest request) {
         RoutineResponse response = routineService.createRoutine(userId, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @GetMapping("/{routineId}")
+    public ResponseEntity<RoutineResponse> getDetailRoutine(
+            @AuthenticationPrincipal Long userId,
+            @PathVariable("routineId") Long routineId) {
+
+        RoutineResponse response = routineService.getRoutine(userId, routineId);
+        return ResponseEntity.ok(response);
     }
 }
