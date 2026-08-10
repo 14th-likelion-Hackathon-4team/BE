@@ -1,6 +1,7 @@
 package com.likelion.team4.domain.user.controller;
 
 import com.likelion.team4.domain.user.dto.request.UpdateNicknameRequest;
+import com.likelion.team4.domain.user.dto.request.UpdatePasswordRequest;
 import com.likelion.team4.domain.user.dto.response.UserProfileResponse;
 import com.likelion.team4.domain.user.service.MypageService;
 import com.likelion.team4.global.response.ApiResponse;
@@ -31,5 +32,14 @@ public class MypageController {
             @Valid @RequestBody UpdateNicknameRequest request) {
         UserProfileResponse response = mypageService.updateNickname(userId, request);
         return ResponseEntity.ok(ApiResponse.success("S200", "닉네임 변경 성공", response));
+    }
+
+    // 비밀번호 변경
+    @PatchMapping("/me/password")
+    public ResponseEntity<ApiResponse<Void>> updatePassword(
+            @AuthenticationPrincipal Long userId,
+            @Valid @RequestBody UpdatePasswordRequest request) {
+        mypageService.updatePassword(userId, request);
+        return ResponseEntity.ok(ApiResponse.success("S200", "비밀번호 변경 성공", null));
     }
 }
