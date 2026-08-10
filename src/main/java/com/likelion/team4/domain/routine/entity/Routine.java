@@ -90,4 +90,8 @@ public class Routine {
     public void updateActive(boolean active) {
         this.active = active;
     }
+
+    public void deleteSoftly() {
+        this.deletedAt = LocalDateTime.now();
+    }
 }
