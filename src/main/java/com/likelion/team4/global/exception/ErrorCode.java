@@ -15,6 +15,10 @@ public enum ErrorCode {
     EXPIRED_REFRESH_TOKEN(HttpStatus.UNAUTHORIZED, "E401", "Refresh Token이 유효하지 않습니다. 다시 로그인해주세요"),
     DUPLICATE_LOGIN_ID(HttpStatus.CONFLICT, "E409", "이미 사용 중인 아이디입니다"),
 
+    // 비밀번호 변경
+    INVALID_PASSWORD(HttpStatus.BAD_REQUEST, "E400", "현재 비밀번호가 일치하지 않습니다."),
+    SAME_AS_OLD_PASSWORD(HttpStatus.BAD_REQUEST, "E400", "새 비밀번호는 현재 비밀번호와 동일할 수 없습니다."),
+
     // 공통 리소스
     RESOURCE_NOT_FOUND(HttpStatus.NOT_FOUND, "E404", "요청한 리소스를 찾을 수 없습니다"),
     FORBIDDEN_ACCESS(HttpStatus.FORBIDDEN, "E403", "해당 루틴에 접근할 권한이 없습니다"),
