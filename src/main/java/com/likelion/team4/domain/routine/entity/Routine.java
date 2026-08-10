@@ -86,4 +86,8 @@ public class Routine {
         this.repeatType = repeatType;
         this.repeatCount = repeatCount;
     }
+
+    public void updateActive(boolean active) {
+        this.active = active;
+    }
 }
