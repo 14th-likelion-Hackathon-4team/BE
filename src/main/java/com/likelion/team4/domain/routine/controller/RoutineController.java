@@ -69,4 +69,13 @@ public class RoutineController {
         RoutineResponse response = routineService.updateActiveStatus(userId, routineId, request.getActive());
         return ResponseEntity.ok(ApiResponse.success("S200", "루틴 활성화 상태 변경 성공", response));
     }
+
+    @DeleteMapping("/{routineId}")
+    public ResponseEntity<ApiResponse<Void>> deleteRoutine(
+            @AuthenticationPrincipal Long userId,
+            @PathVariable("routineId") Long routineId) {
+
+        routineService.deleteRoutine(userId, routineId);
+        return ResponseEntity.ok(ApiResponse.success("S200", "루틴 삭제 성공", null));
+    }
 }
