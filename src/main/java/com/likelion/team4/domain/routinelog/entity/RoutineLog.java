@@ -5,7 +5,7 @@ import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import com.likelion.team4.domain.Routine.entity.Routine;
+import com.likelion.team4.domain.routine.entity.Routine;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
