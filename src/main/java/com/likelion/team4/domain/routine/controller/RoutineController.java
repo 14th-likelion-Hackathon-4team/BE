@@ -1,5 +1,6 @@
 package com.likelion.team4.domain.routine.controller;
 
+import com.likelion.team4.domain.routine.dto.request.RoutineActiveRequest;
 import com.likelion.team4.domain.routine.dto.request.RoutineRequest;
 import com.likelion.team4.domain.routine.dto.response.RoutineResponse;
 import com.likelion.team4.domain.routine.service.RoutineService;
@@ -57,5 +58,15 @@ public class RoutineController {
 
         RoutineResponse response = routineService.updateRoutine(userId, routineId, request);
         return ResponseEntity.ok(ApiResponse.success("S200", "루틴 수정 성공", response));
+    }
+
+    @PatchMapping("/{routineId}/status")
+    public ResponseEntity<ApiResponse<RoutineResponse>> updateRoutineActiveStatus(
+            @AuthenticationPrincipal Long userId,
+            @PathVariable("routineId") Long routineId,
+            @Valid @RequestBody RoutineActiveRequest request) {
+
+        RoutineResponse response = routineService.updateActiveStatus(userId, routineId, request.getActive());
+        return ResponseEntity.ok(ApiResponse.success("S200", "루틴 활성화 상태 변경 성공", response));
     }
 }
