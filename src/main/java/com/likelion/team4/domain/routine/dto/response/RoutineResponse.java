@@ -1,6 +1,8 @@
 package com.likelion.team4.domain.routine.dto.response;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.likelion.team4.domain.routine.entity.Routine;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -12,12 +14,16 @@ import java.time.LocalTime;
 public class RoutineResponse {
     private Long id;
     private String title;
+    @Schema(type = "string", example = "07:30:00", description = "루틴 수행 시간")
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "HH:mm:ss")
     private LocalTime performTime;
     private String repeatDays;
     private boolean alarm;
     private boolean active;
     private LocalDate startDate;
     private LocalDate endDate;
+    @Schema(type = "string", example = "07:20:00", description = "알람 시간")
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "HH:mm:ss")
     private LocalTime alarmTime;
     private String repeatType;
     private Integer repeatCount;
