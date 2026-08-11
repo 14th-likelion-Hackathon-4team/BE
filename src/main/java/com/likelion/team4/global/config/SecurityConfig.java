@@ -29,7 +29,12 @@ public class SecurityConfig {
                                 "/api/v1/routinefit/auth/login",
                                 "/api/v1/routinefit/auth/reissue",
                                 "/swagger-ui/**",
-                                "/v3/api-docs/**"
+                                "/v3/api-docs/**",
+                                "/api/v1/routinefit/main/**",
+                                "/api/v1/routinefit/main/notifications/today",
+                                "/api/v1/routinefit/routines/*/complete",
+                                "/api/v1/routinefit/alternative-missions/*/complete",
+                                "/api/v1/routinefit/notifications/*/read"
                         ).permitAll()
                         // 나머지는 인증 필요
                         .anyRequest().authenticated()
