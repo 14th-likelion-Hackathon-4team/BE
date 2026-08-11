@@ -73,4 +73,25 @@ public class Routine {
         this.repeatType = repeatType;
         this.repeatCount = repeatCount;
     }
+
+    public void update(String title, LocalTime performTime, String repeatDays, boolean alarm, boolean active, LocalDate startDate, LocalDate endDate, LocalTime alarmTime, String repeatType, Integer repeatCount) {
+        this.title = title;
+        this.performTime = performTime;
+        this.repeatDays = repeatDays;
+        this.alarm = alarm;
+        this.active = active;
+        this.startDate = startDate;
+        this.endDate = endDate;
+        this.alarmTime = alarmTime;
+        this.repeatType = repeatType;
+        this.repeatCount = repeatCount;
+    }
+
+    public void updateActive(boolean active) {
+        this.active = active;
+    }
+
+    public void deleteSoftly() {
+        this.deletedAt = LocalDateTime.now();
+    }
 }

@@ -85,4 +85,15 @@ public class UserService {
         // 새 Access Token 발급
         return jwtUtil.generateAccessToken(user.getId());
     }
+
+    // 로그아웃
+    @Transactional
+    public void logout(Long userId) {
+        // 인증된 사용자 ID로 회원 조회 (존재하지 않거나 유효하지 않은 경우 401 예외 처리 가정)
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException(ErrorCode.INVALID_TOKEN));
+
+        // Refresh Token 및 만료일시를 DB에서 NULL로 업데이트하여 무효화
+        user.updateRefreshToken(null, null); //
+    }
 }
