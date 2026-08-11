@@ -127,41 +127,6 @@ public class MainService {
                 .readAt(notification.getReadAt())
                 .build();
     }
-    public SearchResponse search(Long userId, String keyword) {
 
-        List<Routine> routines =
-                routineRepository.findAllByUser_IdAndTitleContainingAndDeletedAtIsNull(
-                        userId,
-                        keyword
-                );
-
-        List<Notification> notifications =
-                notificationRepository
-                        .findAllByUser_IdAndContentContainingOrderByCreatedAtDesc(
-                                userId,
-                                keyword
-                        );
-
-        List<SearchRoutineResponse> routineResponses = routines.stream()
-                .map(routine -> SearchRoutineResponse.builder()
-                        .routineId(routine.getId())
-                        .title(routine.getTitle())
-                        .build())
-                .toList();
-
-        List<SearchNotificationResponse> notificationResponses = notifications.stream()
-                .map(notification -> SearchNotificationResponse.builder()
-                        .notificationId(notification.getId())
-                        .content(notification.getContent())
-                        .read(notification.isRead())
-                        .createdAt(notification.getCreatedAt())
-                        .build())
-                .toList();
-
-        return SearchResponse.builder()
-                .routines(routineResponses)
-                .notifications(notificationResponses)
-                .build();
-    }
 
 }

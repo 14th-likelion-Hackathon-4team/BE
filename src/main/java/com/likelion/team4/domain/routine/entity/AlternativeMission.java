@@ -6,7 +6,7 @@ import lombok.*;
 
 import java.time.LocalDate;
 
-@Entity
+@Entity(name = "RoutineAlternativeMission")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor

@@ -65,21 +65,4 @@ public class MainController {
                 )
         );
     }
-
-    // 통합 검색
-    @GetMapping("/search")
-    public ResponseEntity<ApiResponse<SearchResponse>> search(
-            @RequestParam Long userId,
-            @RequestParam String keyword
-    ) {
-        SearchResponse response = mainService.search(userId, keyword);
-
-        return ResponseEntity.ok(
-                ApiResponse.success(
-                        "S200",
-                        "통합 검색 성공",
-                        response
-                )
-        );
-    }
 }

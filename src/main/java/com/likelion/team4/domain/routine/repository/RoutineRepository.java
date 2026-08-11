@@ -4,13 +4,11 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface RoutineRepository extends JpaRepository<Routine, Long> {
     List<Routine> findAllByUser_IdAndDeletedAtIsNull(Long userId);
     List<Routine> findAllByUser_IdAndRepeatDaysContainingAndDeletedAtIsNull(Long userId, String day);
-    List<Routine> findAllByUser_IdAndTitleContainingAndDeletedAtIsNull(
-            Long userId,
-            String keyword
-    );
+    Optional<Routine> findByIdAndUser_IdAndDeletedAtIsNull(Long id, Long userId);
 }

@@ -2,7 +2,7 @@ package com.likelion.team4.domain.routine.service;
 
 import com.likelion.team4.domain.routine.dto.response.AlternativeMissionCompleteResponse;
 import com.likelion.team4.domain.routine.entity.AlternativeMission;
-import com.likelion.team4.domain.routine.repository.AlternativeMissionRepository;
+import com.likelion.team4.domain.routine.repository.RoutineAlternativeMissionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -14,7 +14,7 @@ import java.time.LocalDateTime;
 @Transactional
 public class AlternativeMissionService {
 
-    private final AlternativeMissionRepository alternativeMissionRepository;
+    private final RoutineAlternativeMissionRepository alternativeMissionRepository;
 
     public AlternativeMissionCompleteResponse completeMission(Long missionId) {
 

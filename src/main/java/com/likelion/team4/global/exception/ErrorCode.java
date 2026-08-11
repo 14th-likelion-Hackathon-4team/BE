@@ -18,6 +18,10 @@ public enum ErrorCode {
     // 공통 리소스
     RESOURCE_NOT_FOUND(HttpStatus.NOT_FOUND, "E404", "요청한 리소스를 찾을 수 없습니다"),
 
+    // AI 대화
+    ALREADY_PROCESSED_MISSION(HttpStatus.CONFLICT, "E409", "이미 처리된 미션입니다"),
+    LLM_TIMEOUT(HttpStatus.GATEWAY_TIMEOUT, "E504", "미션 생성이 지연되고 있습니다. 잠시 후 다시 시도해주세요"),
+
     // 서버
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "E500", "서버 내부 오류가 발생했습니다");
 
