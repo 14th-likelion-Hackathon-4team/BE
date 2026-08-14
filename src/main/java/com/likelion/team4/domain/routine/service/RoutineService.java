@@ -3,6 +3,7 @@ package com.likelion.team4.domain.routine.service;
 import com.likelion.team4.domain.routine.dto.request.RoutineRequest;
 import com.likelion.team4.domain.routine.dto.response.RoutineResponse;
 import com.likelion.team4.domain.routine.entity.Routine;
+import com.likelion.team4.domain.routine.entity.enums.RepeatType;
 import com.likelion.team4.domain.routine.repository.RoutineRepository;
 import com.likelion.team4.domain.user.entity.User;
 import com.likelion.team4.domain.user.repository.UserRepository;
@@ -43,6 +44,8 @@ public class RoutineService {
         // 1. 유저 조회 (유저가 없을 경우 예외 처리)
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(ErrorCode.RESOURCE_NOT_FOUND));
+
+        validateAndSetRepeatData(request);
 
         // 2. Request DTO를 바탕으로 Routine 엔티티 생성
         Routine routine = Routine.builder()
@@ -101,6 +104,8 @@ public class RoutineService {
             throw new CustomException(ErrorCode.FORBIDDEN_ACCESS);
         }
 
+        validateAndSetRepeatData(request);
+
         // 4. 엔티티 수정 (더티 체킹으로 인해 별도의 save 호출 생략 가능)
         routine.update(
                 request.getTitle(),
@@ -117,6 +122,26 @@ public class RoutineService {
 
         // 5. 수정된 엔티티를 DTO로 변환하여 반환
         return RoutineResponse.from(routine);
+    }
+
+    private void validateAndSetRepeatData(RoutineRequest request) {
+        if (request.getRepeatType() == RepeatType.WEEKLY) {
+            if (request.getRepeatDays() == null || request.getRepeatDays().trim().isEmpty()) {
+                throw new CustomException(ErrorCode.INVALID_INPUT); // "WEEKLY 타입은 요일 지정이 필수입니다."
+            }
+            request.setRepeatCount(null); // 불필요한 값 초기화
+        }
+        else if (request.getRepeatType() == RepeatType.DAILY) {
+            // 프론트엔드가 안 보내도 백엔드에서 전체 요일 강제 세팅
+            request.setRepeatDays("MON,TUE,WED,THU,FRI,SAT,SUN");
+            request.setRepeatCount(null); // 불필요한 값 초기화
+        }
+        else if (request.getRepeatType() == RepeatType.COUNT) {
+            if (request.getRepeatCount() == null || request.getRepeatCount() <= 0) {
+                throw new CustomException(ErrorCode.INVALID_INPUT); // "COUNT 타입은 반복 횟수가 필수입니다."
+            }
+            request.setRepeatDays(null); // COUNT는 요일 정보 불필요하므로 null 처리
+        }
     }
 
     @Transactional // 쓰기 작업이므로 트랜잭션 적용

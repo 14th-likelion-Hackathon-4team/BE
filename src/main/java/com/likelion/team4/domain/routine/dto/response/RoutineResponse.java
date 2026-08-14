@@ -2,6 +2,7 @@ package com.likelion.team4.domain.routine.dto.response;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.likelion.team4.domain.routine.entity.Routine;
 
+import com.likelion.team4.domain.routine.entity.enums.RepeatType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Getter;
@@ -25,7 +26,7 @@ public class RoutineResponse {
     @Schema(type = "string", example = "07:20:00", description = "알람 시간")
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "HH:mm:ss")
     private LocalTime alarmTime;
-    private String repeatType;
+    private RepeatType repeatType;
     private Integer repeatCount;
 
     public static RoutineResponse from(Routine routine) {

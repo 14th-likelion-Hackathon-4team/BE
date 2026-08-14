@@ -1,6 +1,7 @@
 package com.likelion.team4.domain.routine.dto.request;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.likelion.team4.domain.routine.entity.enums.RepeatType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -24,7 +25,6 @@ public class RoutineRequest {
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "HH:mm:ss") // (선택) 확실한 직렬화/역직렬화를 위해
     private LocalTime performTime;
 
-    @NotBlank(message = "반복 요일은 필수 입력값입니다.")
     private String repeatDays;
 
     @NotNull(message = "알림 여부는 필수 입력값입니다.")
@@ -42,8 +42,8 @@ public class RoutineRequest {
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "HH:mm:ss")
     private LocalTime alarmTime;
 
-    @NotBlank(message = "반복 타입은 필수 입력값입니다.")
-    private String repeatType;
+    @NotNull(message = "반복 타입은 필수 입력값입니다.")
+    private RepeatType repeatType;
 
     private Integer repeatCount;
 }
