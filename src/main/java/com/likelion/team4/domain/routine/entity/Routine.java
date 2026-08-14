@@ -1,5 +1,6 @@
 package com.likelion.team4.domain.routine.entity;
 
+import com.likelion.team4.domain.routine.entity.enums.RepeatType;
 import com.likelion.team4.domain.user.entity.User;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -32,7 +33,7 @@ public class Routine {
     @Column(name = "perform_time")
     private LocalTime performTime;
 
-    @Column(name = "repeat_days", nullable = false, length = 20)
+    @Column(name = "repeat_days", length = 50)
     private String repeatDays;
 
     @Column(nullable = false)
@@ -50,8 +51,9 @@ public class Routine {
     @Column(name = "alarm_time")
     private LocalTime alarmTime;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "repeat_type", nullable = false, length = 20)
-    private String repeatType;
+    private RepeatType repeatType;
 
     @Column(name = "repeat_count")
     private Integer repeatCount;
@@ -60,7 +62,7 @@ public class Routine {
     private LocalDateTime deletedAt;
 
     @Builder
-    public Routine(User user, String title, LocalTime performTime, String repeatDays, boolean alarm, boolean active, LocalDate startDate, LocalDate endDate, LocalTime alarmTime, String repeatType, Integer repeatCount) {
+    public Routine(User user, String title, LocalTime performTime, String repeatDays, boolean alarm, boolean active, LocalDate startDate, LocalDate endDate, LocalTime alarmTime, RepeatType repeatType, Integer repeatCount) {
         this.user = user;
         this.title = title;
         this.performTime = performTime;
@@ -74,7 +76,7 @@ public class Routine {
         this.repeatCount = repeatCount;
     }
 
-    public void update(String title, LocalTime performTime, String repeatDays, boolean alarm, boolean active, LocalDate startDate, LocalDate endDate, LocalTime alarmTime, String repeatType, Integer repeatCount) {
+    public void update(String title, LocalTime performTime, String repeatDays, boolean alarm, boolean active, LocalDate startDate, LocalDate endDate, LocalTime alarmTime, RepeatType repeatType, Integer repeatCount) {
         this.title = title;
         this.performTime = performTime;
         this.repeatDays = repeatDays;
