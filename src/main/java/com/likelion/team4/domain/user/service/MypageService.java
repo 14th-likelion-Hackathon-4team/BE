@@ -1,5 +1,6 @@
 package com.likelion.team4.domain.user.service;
 
+import com.likelion.team4.domain.user.dto.request.DeleteRequest;
 import com.likelion.team4.domain.user.dto.request.UpdateAlarmRequest;
 import com.likelion.team4.domain.user.dto.request.UpdateNicknameRequest;
 import com.likelion.team4.domain.user.dto.request.UpdatePasswordRequest;
@@ -74,5 +75,34 @@ public class MypageService {
     private User getUserById(Long userId) {
         return userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(ErrorCode.RESOURCE_NOT_FOUND));
+    }
+
+    // 회원 탈퇴
+    @Transactional
+    public void deleteUser(Long userId, DeleteRequest request) {
+        User user = getUserById(userId);
+
+        // 1. 비밀번호 검증 (입력받은 비밀번호와 DB의 암호화된 비밀번호 비교)
+        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+            // 불일치 시 400 Bad Request 예외 발생
+            throw new CustomException(ErrorCode.INVALID_PASSWORD);
+        }
+
+        // 2. 연관된 하위 데이터 Cascade 물리적 삭제
+        deleteChatDomainsMock(userId);
+        deleteRoutineDomainsMock(userId);
+
+        // 3. 부모(유저) 계정 탈퇴 처리 (물리적 삭제)
+        // 레코드가 삭제되면서 내부의 리프레시 토큰 정보와 개인정보가 완전 파기됨
+        userRepository.delete(user);
+    }
+
+    // 임시 목업 메서드
+    private void deleteChatDomainsMock(Long userId) {
+        System.out.println("[Mock] 유저 ID " + userId + "의 채팅 관련 데이터 삭제 완료");
+    }
+
+    private void deleteRoutineDomainsMock(Long userId) {
+        System.out.println("[Mock] 유저 ID " + userId + "의 루틴 관련 데이터 삭제 완료");
     }
 }
