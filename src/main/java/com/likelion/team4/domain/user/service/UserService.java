@@ -37,6 +37,15 @@ public class UserService {
                 .loginId(request.getLoginId())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .nickname(request.getNickname())
+                .status("ACTIVE")
+                .routineAlarmOn(true)
+                .altMissionReminderOn(true)
+                .alarmSound("차분한벨")
+                .alarmOffsetType("1시간전")
+                .currentStreak(0)
+                .maxStreak(0)
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
                 .build();
 
         User savedUser = userRepository.save(user);
