@@ -5,4 +5,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface RoutineAlternativeMissionRepository
         extends JpaRepository<AlternativeMission, Long> {
+    void deleteAllByRoutine_User_Id(Long userId);
 }
