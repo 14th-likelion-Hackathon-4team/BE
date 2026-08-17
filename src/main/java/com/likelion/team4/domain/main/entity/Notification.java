@@ -1,5 +1,6 @@
 package com.likelion.team4.domain.main.entity;
 
+import com.likelion.team4.domain.routine.entity.Routine;
 import com.likelion.team4.domain.user.entity.User;
 import jakarta.persistence.*;
 import lombok.*;
@@ -22,6 +23,11 @@ public class Notification {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
+
+    // 알림과 연결된 루틴
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "routine_id")
+    private Routine routine;
 
     // 알림 내용
     @Column(nullable = false, length = 255)
