@@ -13,4 +13,5 @@ public interface RoutineRepository extends JpaRepository<Routine, Long> {
     Optional<Routine> findByIdAndUser_IdAndDeletedAtIsNull(Long id, Long userId);
     List<Routine> findAllByAlarmTrueAndActiveTrueAndDeletedAtIsNull();
 
+    void deleteAllByUser_Id(Long userId);
 }

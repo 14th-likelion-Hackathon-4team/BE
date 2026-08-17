@@ -25,4 +25,6 @@ public interface NotificationRepository
             LocalDateTime start,
             LocalDateTime end
     );
+
+    void deleteAllByUser_Id(Long userId);
 }

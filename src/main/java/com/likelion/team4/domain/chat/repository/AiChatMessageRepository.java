@@ -9,4 +9,7 @@ public interface AiChatMessageRepository extends JpaRepository<AiChatMessage, Lo
 
     // 특정 대화의 메시지 목록 조회 (시간순)
     List<AiChatMessage> findByAiChatIdOrderByCreatedAtAsc(Long chatId);
+
+    // 모든 채팅 메시지 내용 삭제
+    void deleteAllByAiChat_RoutineLog_Routine_User_Id(Long userId);
 }

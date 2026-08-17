@@ -13,4 +13,6 @@ public interface RoutineRecordRepository
             Long routineId,
             LocalDate recordDate
     );
+
+    void deleteAllByRoutine_User_Id(Long userId);
 }

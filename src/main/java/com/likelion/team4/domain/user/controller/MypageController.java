@@ -1,5 +1,6 @@
 package com.likelion.team4.domain.user.controller;
 
+import com.likelion.team4.domain.user.dto.request.DeleteRequest;
 import com.likelion.team4.domain.user.dto.request.UpdateAlarmRequest;
 import com.likelion.team4.domain.user.dto.request.UpdateNicknameRequest;
 import com.likelion.team4.domain.user.dto.request.UpdatePasswordRequest;
@@ -51,5 +52,17 @@ public class MypageController {
             @Valid @RequestBody UpdateAlarmRequest request) {
         UserProfileResponse response = mypageService.updateAlarmSettings(userId, request);
         return ResponseEntity.ok(ApiResponse.success("S200", "알림 설정 변경 성공", response));
+    }
+
+    // 회원 탈퇴
+    @DeleteMapping("/me")
+    public ResponseEntity<Void> deleteUser(
+            @AuthenticationPrincipal Long userId,
+            @Valid @RequestBody DeleteRequest request) {
+
+        mypageService.deleteUser(userId, request);
+
+        // 성공 시 204 No Content 반환
+        return ResponseEntity.noContent().build();
     }
 }
