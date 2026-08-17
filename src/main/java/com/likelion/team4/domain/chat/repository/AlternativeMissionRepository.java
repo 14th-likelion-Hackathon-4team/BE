@@ -13,4 +13,7 @@ public interface AlternativeMissionRepository extends JpaRepository<AlternativeM
 
     // 특정 대화의 PENDING 상태 미션 조회
     Optional<AlternativeMission> findByAiChatIdAndStatus(Long chatId, String status);
+
+    // 대체 미션 데이터 삭제
+    void deleteAllByAiChat_RoutineLog_Routine_User_Id(Long userId);
 }
