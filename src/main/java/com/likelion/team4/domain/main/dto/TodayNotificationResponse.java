@@ -11,6 +11,7 @@ import java.time.LocalDateTime;
 public class TodayNotificationResponse {
 
     private Long notificationId;
+    private Long routineId;
     private String content;
     private boolean read;
     private LocalDateTime createdAt;
@@ -18,6 +19,11 @@ public class TodayNotificationResponse {
     public static TodayNotificationResponse from(Notification notification) {
         return TodayNotificationResponse.builder()
                 .notificationId(notification.getId())
+                .routineId(
+                        notification.getRoutine() != null
+                                ? notification.getRoutine().getId()
+                                : null
+                )
                 .content(notification.getContent())
                 .read(notification.isRead())
                 .createdAt(notification.getCreatedAt())

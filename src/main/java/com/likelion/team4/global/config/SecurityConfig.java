@@ -33,8 +33,13 @@ public class SecurityConfig {
                                 "/api/v1/routinefit/main/**",
                                 "/api/v1/routinefit/main/notifications/today",
                                 "/api/v1/routinefit/routines/*/complete",
-                                "/api/v1/routinefit/alternative-missions/*/complete",
-                                "/api/v1/routinefit/notifications/*/read"
+                                "/api/v1/routinefit/notifications/*/read",
+                                "/api/v1/routinefit/reports/daily",
+                                "/api/v1/routinefit/missions/*/complete",
+                                "/api/v1/routinefit/routine-logs/*/chats",
+                                "/api/v1/routinefit/chats/*/missions",
+                                "/api/v1/routinefit/missions/*/complete",
+                                "/api/v1/routinefit/missions/*"
                         ).permitAll()
                         // 나머지는 인증 필요
                         .anyRequest().authenticated()
