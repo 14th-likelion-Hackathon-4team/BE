@@ -19,4 +19,6 @@ public interface NotificationRepository
             Long userId,
             String keyword
     );
+
+    void deleteAllByUser_Id(Long userId);
 }
