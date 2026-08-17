@@ -8,14 +8,17 @@ import java.util.List;
 
 @Getter
 @Builder
-public class DailyReportResponse {
+public class WeeklyReportResponse {
 
-    private Long reportId;
-    private LocalDate date;
+    private LocalDate startDate;
+    private LocalDate endDate;
+
     private int totalRoutineCount;
     private int completedRoutineCount;
-    private int alternativeMissionCount;
     private int completionRate;
+
+    private LocalDate bestDay;
     private int currentStreak;
-    private List<DailyRoutineResponse> routines;
+
+    private List<WeeklyDailyReportResponse> dailyReports;
 }

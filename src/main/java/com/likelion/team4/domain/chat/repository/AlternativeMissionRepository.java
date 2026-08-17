@@ -3,6 +3,7 @@ package com.likelion.team4.domain.chat.repository;
 import com.likelion.team4.domain.chat.entity.AlternativeMission;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -16,4 +17,10 @@ public interface AlternativeMissionRepository extends JpaRepository<AlternativeM
 
     // 대체 미션 데이터 삭제
     void deleteAllByAiChat_RoutineLog_Routine_User_Id(Long userId);
+
+    long countByAiChat_RoutineLog_Routine_User_IdAndMissionDateAndStatus(
+            Long userId,
+            LocalDate missionDate,
+            String status
+    );
 }

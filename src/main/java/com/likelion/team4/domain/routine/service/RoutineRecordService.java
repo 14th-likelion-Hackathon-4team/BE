@@ -1,5 +1,6 @@
 package com.likelion.team4.domain.routine.service;
 
+import com.likelion.team4.domain.report.service.StreakService;
 import com.likelion.team4.domain.routine.dto.response.RoutineCompleteResponse;
 import com.likelion.team4.domain.routine.entity.Routine;
 import com.likelion.team4.domain.routine.entity.RoutineRecord;
@@ -19,11 +20,14 @@ public class RoutineRecordService {
 
     private final RoutineRepository routineRepository;
     private final RoutineRecordRepository routineRecordRepository;
+    private final StreakService streakService;
 
     public RoutineCompleteResponse completeRoutine(Long routineId) {
 
         Routine routine = routineRepository.findById(routineId)
-                .orElseThrow(() -> new IllegalArgumentException("루틴을 찾을 수 없습니다."));
+                .orElseThrow(() ->
+                        new IllegalArgumentException("루틴을 찾을 수 없습니다.")
+                );
 
         LocalDate today = LocalDate.now();
         LocalDateTime completedAt = LocalDateTime.now();
@@ -39,6 +43,12 @@ public class RoutineRecordService {
         record.complete();
 
         routineRecordRepository.save(record);
+
+        // 루틴 완료 후 연속 기록 갱신
+        streakService.updateStreak(
+                routine.getUser().getId(),
+                today
+        );
 
         return RoutineCompleteResponse.builder()
                 .routineId(routineId)
