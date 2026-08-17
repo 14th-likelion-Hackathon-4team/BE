@@ -96,6 +96,11 @@ public class MainService {
                 notifications.stream()
                         .map(notification -> TodayNotificationResponse.builder()
                                 .notificationId(notification.getId())
+                                .routineId(
+                                        notification.getRoutine() != null
+                                                ? notification.getRoutine().getId()
+                                                : null
+                                )
                                 .content(notification.getContent())
                                 .read(notification.isRead())
                                 .createdAt(notification.getCreatedAt())

@@ -9,6 +9,7 @@ import com.likelion.team4.domain.chat.entity.AlternativeMission;
 import com.likelion.team4.domain.chat.repository.AiChatMessageRepository;
 import com.likelion.team4.domain.chat.repository.AiChatRepository;
 import com.likelion.team4.domain.chat.repository.AlternativeMissionRepository;
+import com.likelion.team4.domain.routine.dto.response.AlternativeMissionCompleteResponse;
 import com.likelion.team4.domain.routinelog.entity.RoutineLog;
 import com.likelion.team4.domain.routinelog.repository.RoutineLogRepository;
 import com.likelion.team4.global.exception.CustomException;
@@ -20,6 +21,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -127,6 +129,7 @@ public class ChatService {
                 .content((String) missionData.get("content"))
                 .durationMinutes((Integer) missionData.get("durationMinutes"))
                 .difficulty((String) missionData.get("difficulty"))
+                .missionDate(chat.getRoutineLog().getLogDate())
                 .build();
         alternativeMissionRepository.save(newMission);
 
@@ -156,6 +159,26 @@ public class ChatService {
         }
 
         return new MissionActionResponse(missionId, mission.getStatus(), routineLogStatus);
+    }
+
+    //5.대체미션 클리어
+    @Transactional
+    public AlternativeMissionCompleteResponse completeMission(Long missionId) {
+
+        AlternativeMission mission =
+                alternativeMissionRepository.findById(missionId)
+                        .orElseThrow(() ->
+                                new IllegalArgumentException(
+                                        "대체 미션을 찾을 수 없습니다."
+                                ));
+
+        mission.complete();
+
+        return AlternativeMissionCompleteResponse.builder()
+                .missionId(missionId)
+                .alternativeMissionCompleted(true)
+                .completedAt(LocalDateTime.now())
+                .build();
     }
 
     // GPT API 호출

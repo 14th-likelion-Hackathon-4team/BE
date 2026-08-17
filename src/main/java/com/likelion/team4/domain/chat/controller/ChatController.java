@@ -4,6 +4,7 @@ import com.likelion.team4.domain.chat.dto.request.ChatMessageRequest;
 import com.likelion.team4.domain.chat.dto.request.MissionActionRequest;
 import com.likelion.team4.domain.chat.dto.response.*;
 import com.likelion.team4.domain.chat.service.ChatService;
+import com.likelion.team4.domain.routine.dto.response.AlternativeMissionCompleteResponse;
 import com.likelion.team4.global.response.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -59,5 +60,22 @@ public class ChatController {
         return ResponseEntity.ok(ApiResponse.success("S200",
                 request.getAction().equals("ACCEPT") ? "대체 미션을 수락했습니다" : "대체 미션을 거절했습니다",
                 response));
+    }
+
+    // 5. 대체 미션 완료
+    @PatchMapping("/missions/{missionId}/complete")
+    public ResponseEntity<ApiResponse<AlternativeMissionCompleteResponse>> completeMission(
+            @PathVariable Long missionId) {
+
+        AlternativeMissionCompleteResponse response =
+                chatService.completeMission(missionId);
+
+        return ResponseEntity.ok(
+                ApiResponse.success(
+                        "S200",
+                        "대체 미션이 완료되었습니다.",
+                        response
+                )
+        );
     }
 }

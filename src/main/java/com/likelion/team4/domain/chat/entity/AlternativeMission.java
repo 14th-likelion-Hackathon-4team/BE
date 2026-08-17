@@ -6,6 +6,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
@@ -31,22 +32,33 @@ public class AlternativeMission {
     private String difficulty;
 
     @Column(nullable = false, length = 20)
-    private String status; // PENDING, ACCEPTED, REJECTED, COMPLETED
+    private String status;
 
     @Column(nullable = false)
     private LocalDateTime createdAt;
 
     private LocalDateTime acceptedAt;
+
     private LocalDateTime completedAt;
 
+    @Column(nullable = false)
+    private LocalDate missionDate;
+
     @Builder
-    public AlternativeMission(AiChat aiChat, String content, Integer durationMinutes, String difficulty) {
+    public AlternativeMission(
+            AiChat aiChat,
+            String content,
+            Integer durationMinutes,
+            String difficulty,
+            LocalDate missionDate
+    ) {
         this.aiChat = aiChat;
         this.content = content;
         this.durationMinutes = durationMinutes;
         this.difficulty = difficulty;
         this.status = "PENDING";
         this.createdAt = LocalDateTime.now();
+        this.missionDate = missionDate;
     }
 
     public void accept() {
