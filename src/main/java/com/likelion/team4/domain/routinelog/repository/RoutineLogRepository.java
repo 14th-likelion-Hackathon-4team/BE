@@ -4,4 +4,5 @@ import com.likelion.team4.domain.routinelog.entity.RoutineLog;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface RoutineLogRepository extends JpaRepository<RoutineLog, Long> {
+    void deleteAllByRoutine_User_Id(Long userId);
 }

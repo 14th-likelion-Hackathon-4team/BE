@@ -1,5 +1,14 @@
 package com.likelion.team4.domain.user.service;
 
+import com.likelion.team4.domain.chat.repository.AiChatMessageRepository;
+import com.likelion.team4.domain.chat.repository.AiChatRepository;
+import com.likelion.team4.domain.chat.repository.AlternativeMissionRepository;
+import com.likelion.team4.domain.main.repository.NotificationRepository;
+import com.likelion.team4.domain.routine.repository.RoutineAlternativeMissionRepository;
+import com.likelion.team4.domain.routine.repository.RoutineRecordRepository;
+import com.likelion.team4.domain.routine.repository.RoutineRepository;
+import com.likelion.team4.domain.routinelog.repository.RoutineLogRepository;
+import com.likelion.team4.domain.user.dto.request.DeleteRequest;
 import com.likelion.team4.domain.user.dto.request.UpdateAlarmRequest;
 import com.likelion.team4.domain.user.dto.request.UpdateNicknameRequest;
 import com.likelion.team4.domain.user.dto.request.UpdatePasswordRequest;
@@ -19,6 +28,16 @@ public class MypageService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+
+    // 하위 도메인 삭제를 위한 의존성 주입
+    private final AlternativeMissionRepository alternativeMissionRepository;
+    private final AiChatMessageRepository aiChatMessageRepository;
+    private final AiChatRepository aiChatRepository;
+    private final RoutineLogRepository routineLogRepository;
+    private final RoutineRecordRepository routineRecordRepository;
+    private final RoutineAlternativeMissionRepository routineAlternativeMissionRepository;
+    private final RoutineRepository routineRepository;
+    private final NotificationRepository notificationRepository;
 
     // 내 정보 조회
     @Transactional(readOnly = true)
@@ -74,5 +93,46 @@ public class MypageService {
     private User getUserById(Long userId) {
         return userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(ErrorCode.RESOURCE_NOT_FOUND));
+    }
+
+    // 회원 탈퇴
+    @Transactional
+    public void deleteUser(Long userId, DeleteRequest request) {
+        User user = getUserById(userId);
+
+        // 1. 비밀번호 검증 (입력받은 비밀번호와 DB의 암호화된 비밀번호 비교)
+        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+            // 불일치 시 400 Bad Request 예외 발생
+            throw new CustomException(ErrorCode.INVALID_PASSWORD);
+        }
+
+        // 2. 연관된 하위 데이터 Cascade 물리적 삭제
+        deleteChatDomains(userId);
+        deleteRoutineDomains(userId);
+        deleteNotificationDomains(userId);
+
+        // 3. 부모(유저) 계정 탈퇴 처리 (물리적 삭제)
+        // 레코드가 삭제되면서 내부의 리프레시 토큰 정보와 개인정보가 완전 파기됨
+        userRepository.delete(user);
+    }
+
+    private void deleteChatDomains(Long userId) {
+        // Chat 도메인 자식 엔티티부터 일괄 삭제
+        alternativeMissionRepository.deleteAllByAiChat_RoutineLog_Routine_User_Id(userId);
+        aiChatMessageRepository.deleteAllByAiChat_RoutineLog_Routine_User_Id(userId);
+        aiChatRepository.deleteAllByRoutineLog_Routine_User_Id(userId);
+    }
+
+    private void deleteRoutineDomains(Long userId) {
+        // Routine 도메인 자식 엔티티 일괄 삭제
+        routineLogRepository.deleteAllByRoutine_User_Id(userId);
+        routineRecordRepository.deleteAllByRoutine_User_Id(userId);
+        routineAlternativeMissionRepository.deleteAllByRoutine_User_Id(userId);
+        routineRepository.deleteAllByUser_Id(userId);
+    }
+
+    private void deleteNotificationDomains(Long userId) {
+        // 알림 데이터 일괄 삭제
+        notificationRepository.deleteAllByUser_Id(userId);
     }
 }

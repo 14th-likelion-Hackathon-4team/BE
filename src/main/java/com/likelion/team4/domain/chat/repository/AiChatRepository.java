@@ -13,4 +13,7 @@ public interface AiChatRepository extends JpaRepository<AiChat, Long> {
 
     // 특정 RoutineLog의 가장 최근 대화 조회 (재사용 여부 확인용)
     Optional<AiChat> findTopByRoutineLogIdOrderByCreatedAtDesc(Long routineLogId);
+
+    // AI 대화 데이터 삭제
+    void deleteAllByRoutineLog_Routine_User_Id(Long userId);
 }
