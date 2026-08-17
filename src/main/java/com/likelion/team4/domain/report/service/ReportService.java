@@ -260,6 +260,7 @@ public class ReportService {
                         .completionRate(report.getCompletionRate())
                         .completedRoutineCount(report.getCompletedRoutineCount())
                         .totalRoutineCount(report.getTotalRoutineCount())
+                        .alternativeMissionCount(report.getAlternativeMissionCount())
                         .build())
                 .toList();
     }

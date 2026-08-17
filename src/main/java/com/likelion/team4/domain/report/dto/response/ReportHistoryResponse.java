@@ -14,4 +14,5 @@ public class ReportHistoryResponse {
     private int completionRate;
     private int completedRoutineCount;
     private int totalRoutineCount;
+    private int alternativeMissionCount;
 }
