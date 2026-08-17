@@ -19,4 +19,10 @@ public interface NotificationRepository
             Long userId,
             String keyword
     );
+
+    boolean existsByRoutine_IdAndCreatedAtBetween(
+            Long routineId,
+            LocalDateTime start,
+            LocalDateTime end
+    );
 }

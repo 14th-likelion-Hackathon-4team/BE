@@ -16,6 +16,7 @@ import java.time.LocalDateTime;
 public class NotificationService {
 
     private final NotificationRepository notificationRepository;
+    private final NotificationAiService notificationAiService;
 
     public Notification createNotification(
             User user,
