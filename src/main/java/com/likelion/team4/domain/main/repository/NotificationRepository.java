@@ -20,8 +20,8 @@ public interface NotificationRepository
             String keyword
     );
 
-    boolean existsByRoutine_IdAndCreatedAtBetween(
-            Long routineId,
+    List<Notification> findByRoutine_IdInAndCreatedAtBetween(
+            List<Long> routineIds,
             LocalDateTime start,
             LocalDateTime end
     );
