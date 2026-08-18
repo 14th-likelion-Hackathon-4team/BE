@@ -29,6 +29,7 @@ public class StreakService {
      */
     public void updateStreak(
             Long userId,
+            Long routineId,
             LocalDate completedDate
     ) {
 
@@ -40,34 +41,38 @@ public class StreakService {
                 );
 
         List<RoutineRecord> records =
-                getCompletedRecords(
-                        userId,
-                        completedDate
-                );
+                routineRecordRepository
+                        .findAllByRoutine_IdAndRecordDateLessThanEqualOrderByRecordDateDesc(
+                                routineId,
+                                completedDate
+                        )
+                        .stream()
+                        .filter(RoutineRecord::isCompleted)
+                        .toList();
 
-        RoutineRecord latestRecord =
+        RoutineRecord completedRecord =
                 records.stream()
                         .filter(record ->
                                 record.getRecordDate()
                                         .equals(completedDate)
                         )
-                        .max(
-                                Comparator.comparing(
-                                        RoutineRecord::getId
-                                )
-                        )
+                        .findFirst()
                         .orElse(null);
 
+        if (completedRecord == null) {
+            return;
+        }
+
         int currentStreak =
-                latestRecord == null
-                        ? 0
-                        : calculateCurrentStreak(
+                calculateCurrentStreak(
                         records,
-                        latestRecord
+                        completedRecord
                 );
 
-        int maxStreak =
-                calculateMaxStreak(records);
+        // maxStreak은 여기서 다시 계산하지 않는다.
+        // User에 저장된 maxStreak과 비교해서
+        // 더 클 때만 갱신한다.
+        user.updateStreak(currentStreak);
     }
 
     /**
@@ -107,46 +112,10 @@ public class StreakService {
                         )
                         .orElse(null);
 
-        int currentStreak = 0;
-        LocalDate startedAt = null;
-        LocalDate lastCompletedDate = null;
-
-        if (latestRecord != null) {
-
-            lastCompletedDate =
-                    latestRecord.getRecordDate();
-
-            // 오늘 기준으로 해당 루틴의
-            // 가장 최근 예정일
-            LocalDate latestScheduledDate =
-                    getLatestScheduledDate(
-                            latestRecord.getRoutine(),
-                            today
-                    );
-
-            // 마지막 완료일이
-            // 현재 유효한 예정일인지 확인
-            if (latestScheduledDate != null
-                    && latestRecord.getRecordDate()
-                    .equals(latestScheduledDate)) {
-
-                currentStreak =
-                        calculateCurrentStreak(
-                                records,
-                                latestRecord
-                        );
-
-                startedAt =
-                        calculateStartedAt(
-                                records,
-                                latestRecord
-                        );
-            } else {
-                // 과거에 완료한 기록은 있지만
-                // 현재 예정일을 놓친 경우
-                currentStreak = 0;
-            }
-        }
+        LocalDate lastCompletedDate =
+                latestRecord == null
+                        ? null
+                        : latestRecord.getRecordDate();
 
         boolean isTodayCompleted =
                 records.stream()
@@ -155,14 +124,19 @@ public class StreakService {
                                         .equals(today)
                         );
 
+        // 스트릭은 매번 다시 계산하지 않고
+        // User에 저장되어 있는 값을 사용
+        int currentStreak =
+                user.getCurrentStreak();
+
         int maxStreak =
-                calculateMaxStreak(records);
+                user.getMaxStreak();
 
         return StreakResponse.builder()
                 .currentStreak(currentStreak)
                 .maxStreak(maxStreak)
                 .lastCompletedDate(lastCompletedDate)
-                .startedAt(startedAt)
+                .startedAt(null)
                 .isTodayCompleted(isTodayCompleted)
                 .build();
     }

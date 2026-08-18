@@ -88,9 +88,13 @@ public class User {
         this.updatedAt = LocalDateTime.now();
     }
 
-    public void updateStreak(int currentStreak, int maxStreak) {
+    public void updateStreak(int currentStreak) {
         this.currentStreak = currentStreak;
-        this.maxStreak = maxStreak;
+
+        if (currentStreak > this.maxStreak) {
+            this.maxStreak = currentStreak;
+        }
+
         this.updatedAt = LocalDateTime.now();
     }
 }

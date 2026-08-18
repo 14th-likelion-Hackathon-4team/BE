@@ -37,6 +37,11 @@ public interface RoutineRecordRepository
             LocalDate recordDate
     );
 
+    List<RoutineRecord> findAllByRoutine_IdAndRecordDateLessThanEqualOrderByRecordDateDesc(
+            Long routineId,
+            LocalDate date
+    );
+
     void deleteAllByRoutine_User_Id(Long userId);
 
 }

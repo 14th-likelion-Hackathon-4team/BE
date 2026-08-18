@@ -47,6 +47,7 @@ public class RoutineRecordService {
         // 루틴 완료 후 연속 기록 갱신
         streakService.updateStreak(
                 routine.getUser().getId(),
+                routineId,
                 today
         );
 
