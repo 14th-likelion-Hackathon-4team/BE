@@ -9,6 +9,8 @@ import com.likelion.team4.domain.main.entity.Notification;
 import com.likelion.team4.domain.main.repository.NotificationRepository;
 import com.likelion.team4.domain.user.entity.User;
 import com.likelion.team4.domain.user.repository.UserRepository;
+import com.likelion.team4.global.exception.CustomException;
+import com.likelion.team4.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,7 +34,7 @@ public class MainService {
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() ->
-                        new IllegalArgumentException("존재하지 않는 유저입니다.")
+                        new CustomException(ErrorCode.USER_NOT_FOUND)
                 );
 
         String today = getToday();
@@ -136,7 +138,7 @@ public class MainService {
 
         Notification notification = notificationRepository.findById(notificationId)
                 .orElseThrow(() ->
-                        new IllegalArgumentException("알림을 찾을 수 없습니다.")
+                        new CustomException(ErrorCode.NOTIFICATION_NOT_FOUND)
                 );
 
         notification.read();

@@ -8,6 +8,8 @@ import com.likelion.team4.domain.routine.repository.RoutineRecordRepository;
 import com.likelion.team4.domain.routine.repository.RoutineRepository;
 import com.likelion.team4.domain.user.entity.User;
 import com.likelion.team4.domain.user.repository.UserRepository;
+import com.likelion.team4.global.exception.CustomException;
+import com.likelion.team4.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -40,7 +42,7 @@ public class ReportService {
         // 1. 사용자 조회
         User user = userRepository.findById(userId)
                 .orElseThrow(() ->
-                        new IllegalArgumentException("존재하지 않는 사용자입니다.")
+                        new CustomException(ErrorCode.USER_NOT_FOUND)
                 );
 
         // 2. 해당 날짜에 수행 대상인 루틴만 DB에서 조회
@@ -165,7 +167,7 @@ public class ReportService {
         // 1. 사용자 조회
         User user = userRepository.findById(userId)
                 .orElseThrow(() ->
-                        new IllegalArgumentException("존재하지 않는 사용자입니다.")
+                        new CustomException(ErrorCode.USER_NOT_FOUND)
                 );
 
         // 2. 해당 사용자의 루틴 조회 - 1회
@@ -326,7 +328,7 @@ public class ReportService {
 
         userRepository.findById(userId)
                 .orElseThrow(() ->
-                        new IllegalArgumentException("존재하지 않는 사용자입니다.")
+                        new CustomException(ErrorCode.USER_NOT_FOUND)
                 );
 
         LocalDate today = LocalDate.now();
@@ -374,9 +376,7 @@ public class ReportService {
 
         // 오늘 이후의 리포트는 조회 불가
         if (date.isAfter(LocalDate.now())) {
-            throw new IllegalArgumentException(
-                    "존재하지 않는 리포트입니다."
-            );
+            throw new CustomException(ErrorCode.REPORT_NOT_FOUND);
         }
 
         // 기존 일간 리포트 조회 로직 재사용
