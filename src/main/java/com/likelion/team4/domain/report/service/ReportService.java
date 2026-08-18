@@ -14,7 +14,11 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.List;
-import java.util.stream.IntStream;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -39,68 +43,76 @@ public class ReportService {
                         new IllegalArgumentException("존재하지 않는 사용자입니다.")
                 );
 
-        // 2. 해당 사용자의 루틴 조회
-        List<Routine> routines =
-                routineRepository.findAllByUser_IdAndDeletedAtIsNull(userId);
-
-        // 3. 해당 날짜에 실제 수행 대상인 루틴만 필터링
+        // 2. 해당 날짜에 수행 대상인 루틴만 DB에서 조회
         String day = getDay(date);
 
-        List<Routine> targetRoutines = routines.stream()
-                .filter(routine ->
-                        routine.getStartDate() == null
-                                || !date.isBefore(routine.getStartDate())
-                )
-                .filter(routine ->
-                        routine.getEndDate() == null
-                                || !date.isAfter(routine.getEndDate())
-                )
-                .filter(Routine::isActive)
-                .filter(routine ->
-                        routine.getRepeatDays() != null
-                                && routine.getRepeatDays().contains(day)
-                )
-                .toList();
+        List<Routine> targetRoutines =
+                routineRepository.findTargetRoutines(
+                        userId,
+                        date,
+                        day
+                );
 
-        // 4. 루틴별 완료 여부
-        List<DailyRoutineResponse> routineResponses =
+        // 3. 루틴별 완료 여부
+        // 3. 대상 루틴 ID 추출
+        List<Long> routineIds =
                 targetRoutines.stream()
-                        .map(routine -> {
-
-                            boolean completed =
-                                    routineRecordRepository
-                                            .findByRoutine_IdAndRecordDate(
-                                                    routine.getId(),
-                                                    date
-                                            )
-                                            .map(RoutineRecord::isCompleted)
-                                            .orElse(false);
-
-                            return DailyRoutineResponse.builder()
-                                    .routineId(routine.getId())
-                                    .title(routine.getTitle())
-                                    .completed(completed)
-                                    .build();
-                        })
+                        .map(Routine::getId)
                         .toList();
 
-        // 5. 전체 루틴 수
+        // 4. 해당 루틴들의 오늘 기록을 한 번에 조회
+        List<RoutineRecord> records =
+                routineIds.isEmpty()
+                        ? List.of()
+                        : routineRecordRepository.findAllByRoutine_IdInAndRecordDate(
+                        routineIds,
+                        date
+                );
+
+        // 5. 루틴 ID별 완료 여부를 Map으로 변환
+        Map<Long, Boolean> completedByRoutineId =
+                records.stream()
+                        .collect(
+                                java.util.stream.Collectors.toMap(
+                                        record -> record.getRoutine().getId(),
+                                        RoutineRecord::isCompleted
+                                )
+                        );
+
+        // 6. 루틴별 완료 여부를 메모리에서 확인
+        List<DailyRoutineResponse> routineResponses =
+                targetRoutines.stream()
+                        .map(routine ->
+                                DailyRoutineResponse.builder()
+                                        .routineId(routine.getId())
+                                        .title(routine.getTitle())
+                                        .completed(
+                                                completedByRoutineId.getOrDefault(
+                                                        routine.getId(),
+                                                        false
+                                                )
+                                        )
+                                        .build()
+                        )
+                        .toList();
+
+        // 7. 전체 루틴 수
         int totalRoutineCount = routineResponses.size();
 
-        // 6. 완료 루틴 수
+        // 8. 완료 루틴 수
         int completedRoutineCount =
                 (int) routineResponses.stream()
                         .filter(DailyRoutineResponse::isCompleted)
                         .count();
 
-        // 7. 완료율
+        // 9. 완료율
         int completionRate =
                 totalRoutineCount == 0
                         ? 0
                         : (completedRoutineCount * 100)
                           / totalRoutineCount;
 
-        // 8. 완료된 대체 미션 수
+        // 10. 완료된 대체 미션 수
         int alternativeMissionCount =
                 (int) alternativeMissionRepository
                         .countByAiChat_RoutineLog_Routine_User_IdAndMissionDateAndStatus(
@@ -109,7 +121,7 @@ public class ReportService {
                                 "COMPLETED"
                         );
 
-        // 9. 현재 연속 기록
+        // 11. 현재 연속 기록
         int currentStreak = user.getCurrentStreak();
 
         return DailyReportResponse.builder()
@@ -139,6 +151,8 @@ public class ReportService {
 
     // 주간 리포트 조회
     // 기준 날짜를 포함한 최근 7일 조회
+    // 주간 리포트 조회
+// 기준 날짜를 포함한 최근 7일 조회
     public WeeklyReportResponse getWeeklyReport(
             Long userId,
             LocalDate date
@@ -148,64 +162,149 @@ public class ReportService {
         LocalDate endDate = date;
         LocalDate startDate = date.minusDays(6);
 
-        List<DailyReportResponse> dailyReports =
-                java.util.stream.IntStream.rangeClosed(0, 6)
-                        .mapToObj(i ->
-                                getDailyReport(
-                                        userId,
-                                        startDate.plusDays(i)
-                                )
-                        )
-                        .toList();
-
-        // 전체 루틴 수
-        int totalRoutineCount =
-                dailyReports.stream()
-                        .mapToInt(DailyReportResponse::getTotalRoutineCount)
-                        .sum();
-
-        // 완료 루틴 수
-        int completedRoutineCount =
-                dailyReports.stream()
-                        .mapToInt(DailyReportResponse::getCompletedRoutineCount)
-                        .sum();
-
-        // 전체 완료율
-        int completionRate =
-                totalRoutineCount == 0
-                        ? 0
-                        : (completedRoutineCount * 100) / totalRoutineCount;
-
-        // 가장 완료율이 높은 날
-        LocalDate bestDay =
-                dailyReports.stream()
-                        .filter(report -> report.getTotalRoutineCount() > 0)
-                        .max(
-                                java.util.Comparator
-                                        .comparingInt(DailyReportResponse::getCompletionRate)
-                                        .thenComparing(DailyReportResponse::getDate)
-                        )
-                        .map(DailyReportResponse::getDate)
-                        .orElse(null);
-
-        // 현재 연속 기록
+        // 1. 사용자 조회
         User user = userRepository.findById(userId)
                 .orElseThrow(() ->
                         new IllegalArgumentException("존재하지 않는 사용자입니다.")
                 );
 
-        int currentStreak = user.getCurrentStreak();
+        // 2. 해당 사용자의 루틴 조회 - 1회
+        List<Routine> routines =
+                routineRepository.findWeeklyTargetRoutines(
+                        userId,
+                        startDate,
+                        endDate
+                );
 
-        // 주간용 일별 응답으로 변환
+        // 3. 해당 기간의 루틴 기록 전체 조회 - 1회
+        List<RoutineRecord> records =
+                routineRecordRepository.findAllByRoutine_User_IdAndRecordDateBetween(
+                        userId,
+                        startDate,
+                        endDate
+                );
+
+        // 날짜별 완료된 루틴 ID 저장
+        Map<LocalDate, Set<Long>> completedRoutineIdsByDate =
+                new HashMap<>();
+
+        for (RoutineRecord record : records) {
+            if (!record.isCompleted()) {
+                continue;
+            }
+
+            completedRoutineIdsByDate
+                    .computeIfAbsent(
+                            record.getRecordDate(),
+                            key -> new HashSet<>()
+                    )
+                    .add(record.getRoutine().getId());
+        }
+
+        // 전체 루틴 수
+        int totalRoutineCount = 0;
+
+        // 전체 완료 루틴 수
+        int completedRoutineCount = 0;
+
+        // 일별 리포트
         List<WeeklyDailyReportResponse> weeklyDailyReports =
-                dailyReports.stream()
-                        .map(report ->
-                                WeeklyDailyReportResponse.builder()
-                                        .date(report.getDate())
-                                        .completionRate(report.getCompletionRate())
-                                        .build()
+                new java.util.ArrayList<>();
+
+        // 4. 최근 7일을 Java에서 계산
+        for (int i = 0; i < 7; i++) {
+
+            LocalDate currentDate = startDate.plusDays(i);
+            String day = getDay(currentDate);
+
+            // 해당 날짜에 실제 수행 대상인 루틴
+            List<Routine> targetRoutines =
+                    routines.stream()
+                            .filter(routine ->
+                                    routine.getStartDate() == null
+                                            || !currentDate.isBefore(
+                                            routine.getStartDate()
+                                    )
+                            )
+                            .filter(routine ->
+                                    routine.getEndDate() == null
+                                            || !currentDate.isAfter(
+                                            routine.getEndDate()
+                                    )
+                            )
+                            .filter(Routine::isActive)
+                            .filter(routine ->
+                                    routine.getRepeatDays() != null
+                                            && routine.getRepeatDays().contains(day)
+                            )
+                            .toList();
+
+            // 해당 날짜의 전체 루틴 수
+            int dailyTotalRoutineCount =
+                    targetRoutines.size();
+
+            // 해당 날짜의 완료된 루틴 ID
+            Set<Long> completedRoutineIds =
+                    completedRoutineIdsByDate.getOrDefault(
+                            currentDate,
+                            Set.of()
+                    );
+
+            // 해당 날짜의 완료 루틴 수
+            int dailyCompletedRoutineCount =
+                    (int) targetRoutines.stream()
+                            .filter(routine ->
+                                    completedRoutineIds.contains(
+                                            routine.getId()
+                                    )
+                            )
+                            .count();
+
+            // 해당 날짜의 완료율
+            int dailyCompletionRate =
+                    dailyTotalRoutineCount == 0
+                            ? 0
+                            : (dailyCompletedRoutineCount * 100)
+                              / dailyTotalRoutineCount;
+
+            // 주간 전체에 누적
+            totalRoutineCount += dailyTotalRoutineCount;
+            completedRoutineCount += dailyCompletedRoutineCount;
+
+            // 일별 응답 추가
+            weeklyDailyReports.add(
+                    WeeklyDailyReportResponse.builder()
+                            .date(currentDate)
+                            .completionRate(dailyCompletionRate)
+                            .build()
+            );
+        }
+
+        // 5. 전체 완료율
+        int completionRate =
+                totalRoutineCount == 0
+                        ? 0
+                        : (completedRoutineCount * 100)
+                          / totalRoutineCount;
+
+        // 6. 가장 완료율이 높은 날
+        LocalDate bestDay =
+                weeklyDailyReports.stream()
+                        .filter(report ->
+                                report.getCompletionRate() > 0
                         )
-                        .toList();
+                        .max(
+                                Comparator
+                                        .comparingInt(
+                                                WeeklyDailyReportResponse
+                                                        ::getCompletionRate
+                                        )
+                                        .thenComparing(
+                                                WeeklyDailyReportResponse::getDate
+                                        )
+                        )
+                        .map(WeeklyDailyReportResponse::getDate)
+                        .orElse(null);
 
         return WeeklyReportResponse.builder()
                 .startDate(startDate)
@@ -214,7 +313,7 @@ public class ReportService {
                 .completedRoutineCount(completedRoutineCount)
                 .completionRate(completionRate)
                 .bestDay(bestDay)
-                .currentStreak(currentStreak)
+                .currentStreak(user.getCurrentStreak())
                 .dailyReports(weeklyDailyReports)
                 .build();
     }

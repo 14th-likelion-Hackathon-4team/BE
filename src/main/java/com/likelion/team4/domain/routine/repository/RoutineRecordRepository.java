@@ -26,6 +26,17 @@ public interface RoutineRecordRepository
             LocalDate endDate
     );
 
+    List<RoutineRecord> findAllByRoutine_User_IdAndRecordDateBetween(
+            Long userId,
+            LocalDate startDate,
+            LocalDate endDate
+    );
+
+    List<RoutineRecord> findAllByRoutine_IdInAndRecordDate(
+            List<Long> routineIds,
+            LocalDate recordDate
+    );
+
     void deleteAllByRoutine_User_Id(Long userId);
 
 }
