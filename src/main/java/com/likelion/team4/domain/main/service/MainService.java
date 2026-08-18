@@ -27,10 +27,13 @@ public class MainService {
     private final RoutineRecordRepository routineRecordRepository;
     private final UserRepository userRepository;
 
+    @Transactional
     public MainResponse getMainPage(Long userId) {
 
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 유저입니다."));
+                .orElseThrow(() ->
+                        new IllegalArgumentException("존재하지 않는 유저입니다.")
+                );
 
         String today = getToday();
 
@@ -40,21 +43,33 @@ public class MainService {
                         today
                 );
 
+        LocalDate todayDate = LocalDate.now();
+
         List<TodayRoutineResponse> todayRoutines = routines.stream()
                 .map(routine -> {
-                    boolean completed = routineRecordRepository
-                            .findByRoutine_IdAndRecordDate(
-                                    routine.getId(),
-                                    LocalDate.now()
-                            )
-                            .map(RoutineRecord::isCompleted)
-                            .orElse(false);
+
+                    RoutineRecord routineRecord =
+                            routineRecordRepository
+                                    .findByRoutine_IdAndRecordDate(
+                                            routine.getId(),
+                                            todayDate
+                                    )
+                                    .orElseGet(() ->
+                                            routineRecordRepository.save(
+                                                    RoutineRecord.builder()
+                                                            .routine(routine)
+                                                            .recordDate(todayDate)
+                                                            .completed(false)
+                                                            .build()
+                                            )
+                                    );
 
                     return TodayRoutineResponse.builder()
                             .routineId(routine.getId())
+                            .routineLogId(routineRecord.getId())
                             .routineName(routine.getTitle())
                             .scheduledTime(routine.getPerformTime())
-                            .completed(completed)
+                            .completed(routineRecord.isCompleted())
                             .build();
                 })
                 .toList();
