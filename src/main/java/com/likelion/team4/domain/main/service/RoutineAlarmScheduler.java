@@ -1,5 +1,6 @@
 package com.likelion.team4.domain.main.service;
 
+import com.likelion.team4.domain.main.entity.Notification;
 import com.likelion.team4.domain.main.repository.NotificationRepository;
 import com.likelion.team4.domain.routine.entity.Routine;
 import com.likelion.team4.domain.routine.repository.RoutineRepository;
@@ -7,13 +8,14 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Component
 @RequiredArgsConstructor
@@ -26,7 +28,6 @@ public class RoutineAlarmScheduler {
     private final NotificationAiService notificationAiService;
 
     @Scheduled(cron = "0 * * * * *", zone = "Asia/Seoul")
-    @Transactional
     public void createRoutineNotifications() {
 
         // 한국 시간 기준
@@ -54,13 +55,40 @@ public class RoutineAlarmScheduler {
         };
 
         List<Routine> routines =
-                routineRepository
-                        .findAllByAlarmTrueAndActiveTrueAndDeletedAtIsNull();
+                routineRepository.findTargetRoutines(
+                        today,
+                        todayDay,
+                        now
+                );
 
         log.info(
                 "=== 알림 대상 루틴 수: {} ===",
                 routines.size()
         );
+
+        List<Long> routineIds = routines.stream()
+                .map(Routine::getId)
+                .toList();
+
+        if (routineIds.isEmpty()) {
+            log.info("=== 알림 대상 루틴 없음 ===");
+            return;
+        }
+
+        LocalDateTime start = today.atStartOfDay();
+        LocalDateTime end = today.plusDays(1).atStartOfDay();
+
+        List<Notification> todayNotifications =
+                notificationRepository
+                        .findByRoutine_IdInAndCreatedAtBetween(
+                                routineIds,
+                                start,
+                                end
+                        );
+
+        Set<Long> notifiedRoutineIds = todayNotifications.stream()
+                .map(notification -> notification.getRoutine().getId())
+                .collect(Collectors.toSet());
 
         for (Routine routine : routines) {
 
@@ -74,109 +102,12 @@ public class RoutineAlarmScheduler {
                     routine.getRepeatDays()
             );
 
-            // 시작일 이전이면 제외
-            if (routine.getStartDate() != null
-                    && today.isBefore(routine.getStartDate())) {
-
-                log.info(
-                        "루틴 제외 - 시작일 이전: routineId={}, startDate={}",
-                        routine.getId(),
-                        routine.getStartDate()
-                );
-
-                continue;
-            }
-
-            // 종료일 이후면 제외
-            if (routine.getEndDate() != null
-                    && today.isAfter(routine.getEndDate())) {
-
-                log.info(
-                        "루틴 제외 - 종료일 이후: routineId={}, endDate={}",
-                        routine.getId(),
-                        routine.getEndDate()
-                );
-
-                continue;
-            }
-
-            // 반복 요일 확인
-            if (routine.getRepeatDays() == null
-                    || !routine.getRepeatDays().contains(todayDay)) {
-
-                log.info(
-                        "루틴 제외 - 오늘 반복 요일 아님: routineId={}, todayDay={}, repeatDays={}",
-                        routine.getId(),
-                        todayDay,
-                        routine.getRepeatDays()
-                );
-
-                continue;
-            }
-
-            // 알람 시간이 없으면 제외
-            if (routine.getAlarmTime() == null) {
-
-                log.info(
-                        "루틴 제외 - 알람 시간 없음: routineId={}",
-                        routine.getId()
-                );
-
-                continue;
-            }
-
-            LocalTime alarmTime =
-                    routine.getAlarmTime()
-                            .withSecond(0)
-                            .withNano(0);
-
-            // 현재 시간과 알람 시간이 같은지 확인
-            if (!alarmTime.equals(now)) {
-
-                log.info(
-                        "루틴 제외 - 알람 시간 불일치: routineId={}, alarmTime={}, now={}",
-                        routine.getId(),
-                        alarmTime,
-                        now
-                );
-
-                continue;
-            }
-
-            // 사용자 알림 설정 확인
-            if (!routine.getUser().isRoutineAlarmOn()) {
-
-                log.info(
-                        "루틴 제외 - 사용자 알림 설정 OFF: routineId={}, userId={}",
-                        routine.getId(),
-                        routine.getUser().getId()
-                );
-
-                continue;
-            }
-
             // 오늘 이미 생성된 알림인지 확인
-            LocalDateTime start =
-                    today.atStartOfDay();
-
-            LocalDateTime end =
-                    today.plusDays(1).atStartOfDay();
-
-            boolean alreadyCreated =
-                    notificationRepository
-                            .existsByRoutine_IdAndCreatedAtBetween(
-                                    routine.getId(),
-                                    start,
-                                    end
-                            );
-
-            if (alreadyCreated) {
-
+            if (notifiedRoutineIds.contains(routine.getId())) {
                 log.info(
                         "루틴 제외 - 오늘 이미 알림 생성됨: routineId={}",
                         routine.getId()
                 );
-
                 continue;
             }
 

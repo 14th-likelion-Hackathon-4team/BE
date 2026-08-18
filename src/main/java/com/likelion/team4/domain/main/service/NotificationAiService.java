@@ -1,14 +1,14 @@
 package com.likelion.team4.domain.main.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.likelion.team4.domain.routine.entity.Routine;
+import com.likelion.team4.global.exception.CustomException;
+import com.likelion.team4.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
-import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.client.RestClient;
 
-import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 
@@ -19,7 +19,9 @@ public class NotificationAiService {
     @Value("${openai.api.key}")
     private String openaiApiKey;
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final RestClient restClient = RestClient.builder()
+            .baseUrl("https://api.openai.com")
+            .build();
 
     public String generateNotification(Routine routine) {
 
@@ -41,18 +43,6 @@ public class NotificationAiService {
                 routine.getPerformTime()
         );
 
-        WebClient webClient = WebClient.builder()
-                .baseUrl("https://api.openai.com")
-                .defaultHeader(
-                        "Authorization",
-                        "Bearer " + openaiApiKey
-                )
-                .defaultHeader(
-                        "Content-Type",
-                        "application/json"
-                )
-                .build();
-
         Map<String, Object> requestBody = Map.of(
                 "model", "gpt-4o-mini",
                 "max_tokens", 100,
@@ -65,13 +55,16 @@ public class NotificationAiService {
         );
 
         try {
-            Map response = webClient.post()
+            Map response = restClient.post()
                     .uri("/v1/chat/completions")
+                    .header(
+                            "Authorization",
+                            "Bearer " + openaiApiKey
+                    )
                     .contentType(MediaType.APPLICATION_JSON)
-                    .bodyValue(requestBody)
+                    .body(requestBody)
                     .retrieve()
-                    .bodyToMono(Map.class)
-                    .block(Duration.ofSeconds(10));
+                    .body(Map.class);
 
             List<Map<String, Object>> choices =
                     (List<Map<String, Object>>) response.get("choices");
@@ -82,9 +75,8 @@ public class NotificationAiService {
             return ((String) message.get("content")).trim();
 
         } catch (Exception e) {
-            throw new IllegalStateException(
-                    "AI 알림 생성에 실패했습니다.",
-                    e
+            throw new CustomException(
+                    ErrorCode.AI_NOTIFICATION_GENERATION_FAILED
             );
         }
     }
