@@ -4,18 +4,15 @@ import lombok.Builder;
 import lombok.Getter;
 
 import java.time.LocalDate;
-import java.util.List;
 
 @Getter
 @Builder
-public class DailyReportResponse {
+public class ReportHistoryResponse {
 
     private Long reportId;
     private LocalDate date;
-    private int totalRoutineCount;
-    private int completedRoutineCount;
-    private int alternativeMissionCount;
     private int completionRate;
-    private int currentStreak;
-    private List<DailyRoutineResponse> routines;
+    private int completedRoutineCount;
+    private int totalRoutineCount;
+    private int alternativeMissionCount;
 }

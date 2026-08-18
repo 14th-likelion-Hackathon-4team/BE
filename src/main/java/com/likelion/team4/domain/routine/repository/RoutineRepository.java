@@ -17,6 +17,46 @@ public interface RoutineRepository extends JpaRepository<Routine, Long> {
     Optional<Routine> findByIdAndUser_IdAndDeletedAtIsNull(Long id, Long userId);
     List<Routine> findAllByAlarmTrueAndActiveTrueAndDeletedAtIsNull();
 
+    @Query("""
+        SELECT r
+        FROM Routine r
+        WHERE r.user.id = :userId
+          AND r.deletedAt IS NULL
+          AND r.active = true
+          AND (r.startDate IS NULL OR r.startDate <= :date)
+          AND (r.endDate IS NULL OR r.endDate >= :date)
+          AND r.repeatDays LIKE CONCAT('%', :day, '%')
+        """)
+    List<Routine> findTargetRoutines(
+            @Param("userId") Long userId,
+            @Param("date") LocalDate date,
+            @Param("day") String day
+    );
+
+    @Query("""
+    SELECT r
+    FROM Routine r
+    WHERE r.user.id = :userId
+      AND r.deletedAt IS NULL
+      AND r.active = true
+      AND (r.startDate IS NULL OR r.startDate <= :endDate)
+      AND (r.endDate IS NULL OR r.endDate >= :startDate)
+      AND (
+            r.repeatDays LIKE '%MON%'
+         OR r.repeatDays LIKE '%TUE%'
+         OR r.repeatDays LIKE '%WED%'
+         OR r.repeatDays LIKE '%THU%'
+         OR r.repeatDays LIKE '%FRI%'
+         OR r.repeatDays LIKE '%SAT%'
+         OR r.repeatDays LIKE '%SUN%'
+      )
+    """)
+    List<Routine> findWeeklyTargetRoutines(
+            @Param("userId") Long userId,
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate
+    );
+
     void deleteAllByUser_Id(Long userId);
 
     @Query("""
