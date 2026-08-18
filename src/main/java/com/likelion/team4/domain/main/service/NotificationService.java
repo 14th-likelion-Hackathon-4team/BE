@@ -12,11 +12,12 @@ import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
-@Transactional
 public class NotificationService {
 
     private final NotificationRepository notificationRepository;
+    private final NotificationAiService notificationAiService;
 
+    @Transactional
     public Notification createNotification(
             User user,
             Routine routine,

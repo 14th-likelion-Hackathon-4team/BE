@@ -28,7 +28,10 @@ public enum ErrorCode {
     LLM_TIMEOUT(HttpStatus.GATEWAY_TIMEOUT, "E504", "미션 생성이 지연되고 있습니다. 잠시 후 다시 시도해주세요"),
 
     // 서버
-    INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "E500", "서버 내부 오류가 발생했습니다");
+    INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "E500", "서버 내부 오류가 발생했습니다"),
+
+    // AI 알림
+    AI_NOTIFICATION_GENERATION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR,"E502","AI 알림 생성에 실패했습니다.");
 
     private final HttpStatus status;
     private final String code;

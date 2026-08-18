@@ -20,5 +20,11 @@ public interface NotificationRepository
             String keyword
     );
 
+    List<Notification> findByRoutine_IdInAndCreatedAtBetween(
+            List<Long> routineIds,
+            LocalDateTime start,
+            LocalDateTime end
+    );
+
     void deleteAllByUser_Id(Long userId);
 }
