@@ -168,8 +168,8 @@ public class ChatService {
         AlternativeMission mission =
                 alternativeMissionRepository.findById(missionId)
                         .orElseThrow(() ->
-                                new IllegalArgumentException(
-                                        "대체 미션을 찾을 수 없습니다."
+                                new CustomException(
+                                        ErrorCode.ALTERNATIVE_MISSION_NOT_FOUND
                                 ));
 
         mission.complete();

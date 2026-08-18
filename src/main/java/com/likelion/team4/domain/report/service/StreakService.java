@@ -6,6 +6,8 @@ import com.likelion.team4.domain.routine.entity.RoutineRecord;
 import com.likelion.team4.domain.routine.repository.RoutineRecordRepository;
 import com.likelion.team4.domain.user.entity.User;
 import com.likelion.team4.domain.user.repository.UserRepository;
+import com.likelion.team4.global.exception.CustomException;
+import com.likelion.team4.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,9 +37,7 @@ public class StreakService {
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() ->
-                        new IllegalArgumentException(
-                                "존재하지 않는 사용자입니다."
-                        )
+                        new CustomException(ErrorCode.USER_NOT_FOUND)
                 );
 
         List<RoutineRecord> records =
@@ -85,10 +85,7 @@ public class StreakService {
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() ->
-                        new IllegalArgumentException(
-                                "존재하지 않는 사용자입니다."
-                        )
-                );
+                                new CustomException(ErrorCode.USER_NOT_FOUND));
 
         LocalDate today = LocalDate.now();
 

@@ -6,6 +6,8 @@ import com.likelion.team4.domain.routine.entity.Routine;
 import com.likelion.team4.domain.routine.entity.RoutineRecord;
 import com.likelion.team4.domain.routine.repository.RoutineRecordRepository;
 import com.likelion.team4.domain.routine.repository.RoutineRepository;
+import com.likelion.team4.global.exception.CustomException;
+import com.likelion.team4.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,7 +28,7 @@ public class RoutineRecordService {
 
         Routine routine = routineRepository.findById(routineId)
                 .orElseThrow(() ->
-                        new IllegalArgumentException("루틴을 찾을 수 없습니다.")
+                        new CustomException(ErrorCode.ROUTINE_NOT_FOUND)
                 );
 
         LocalDate today = LocalDate.now();
