@@ -82,6 +82,11 @@ public class UserService {
     // 토큰 재발급
     @Transactional
     public String reissue(String refreshToken) {
+        // refreshToken이 null이거나 비어있는지 검증
+        if (refreshToken == null || refreshToken.isBlank()) {
+            throw new CustomException(ErrorCode.INVALID_TOKEN);
+        }
+
         // Refresh Token으로 회원 조회
         User user = userRepository.findByRefreshToken(refreshToken)
                 .orElseThrow(() -> new CustomException(ErrorCode.EXPIRED_REFRESH_TOKEN));
@@ -94,7 +99,6 @@ public class UserService {
         // 새 Access Token 발급
         return jwtUtil.generateAccessToken(user.getId());
     }
-
     // 로그아웃
     @Transactional
     public void logout(Long userId) {
