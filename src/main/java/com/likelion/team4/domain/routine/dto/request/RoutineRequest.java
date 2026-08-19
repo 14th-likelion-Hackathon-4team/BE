@@ -5,6 +5,7 @@ import com.likelion.team4.domain.routine.entity.enums.RepeatType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -19,6 +20,7 @@ import java.time.LocalTime;
 @AllArgsConstructor
 public class RoutineRequest {
     @NotBlank(message = "타이틀은 필수 입력값입니다.")
+    @Size(max = 100, message = "루틴 제목은 최대 100자까지 입력 가능합니다.")
     private String title;
 
     @Schema(type = "string", example = "07:30:00", description = "루틴 수행 시간")
