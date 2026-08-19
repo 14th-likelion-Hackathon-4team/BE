@@ -31,8 +31,6 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // 브라우저의 사전 요청은 조건 없이 모두 허용
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        // 루트 경로 (서버 생존 확인용)
-                        .requestMatchers("/").permitAll()
                         // 인증 없이 접근 가능한 API
                         .requestMatchers(
                                 "/api/v1/routinefit/auth/signup",
