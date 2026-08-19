@@ -31,6 +31,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // 브라우저의 사전 요청은 조건 없이 모두 허용
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        // 루트 경로 (서버 생존 확인용)
+                        .requestMatchers("/").permitAll()
                         // 인증 없이 접근 가능한 API
                         .requestMatchers(
                                 "/api/v1/routinefit/auth/signup",
@@ -38,17 +40,7 @@ public class SecurityConfig {
                                 "/api/v1/routinefit/auth/login",
                                 "/api/v1/routinefit/auth/reissue",
                                 "/swagger-ui/**",
-                                "/v3/api-docs/**",
-                                "/api/v1/routinefit/main/**",
-                                "/api/v1/routinefit/main/notifications/today",
-                                "/api/v1/routinefit/routines/*/complete",
-                                "/api/v1/routinefit/notifications/*/read",
-                                "/api/v1/routinefit/missions/*/complete",
-                                "/api/v1/routinefit/routine-logs/*/chats",
-                                "/api/v1/routinefit/chats/*/missions",
-                                "/api/v1/routinefit/missions/*/complete",
-                                "/api/v1/routinefit/missions/*",
-                                "/api/v1/routinefit/reports/**"
+                                "/v3/api-docs/**"
                         ).permitAll()
                         // 나머지는 인증 필요
                         .anyRequest().authenticated()
