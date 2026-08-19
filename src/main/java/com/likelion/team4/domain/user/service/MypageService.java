@@ -72,12 +72,18 @@ public class MypageService {
         // 3. 새 비밀번호 암호화 후 반영
         String encodedPassword = passwordEncoder.encode(request.getNewPassword());
         user.updatePassword(encodedPassword);
+
+        // 4. 비밀번호가 변경되었으므로 기존 로그인 세션(Refresh Token) 무효화
+        user.updateRefreshToken(null, null);
     }
 
     // 알림 설정 변경
     @Transactional
     public UserProfileResponse updateAlarmSettings(Long userId, UpdateAlarmRequest request) {
         User user = getUserById(userId);
+
+        // 프론트가 보낸 값을 한 번 더 정제
+        Integer finalOffsetMinutes = request.getAlarmOffsetMinutes();
 
         // '직접설정'일 때 분(minutes) 값이 누락되었는지 검증
         if ("직접설정".equals(request.getAlarmOffsetType()) && request.getAlarmOffsetMinutes() == null) {
