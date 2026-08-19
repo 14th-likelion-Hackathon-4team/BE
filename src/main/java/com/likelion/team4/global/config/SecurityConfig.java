@@ -64,7 +64,8 @@ public class SecurityConfig {
         // 프론트엔드가 접속하는 출처(Origin) 허용
         configuration.setAllowedOrigins(List.of(
                 "http://localhost:5173",
-                "http://54.117.20.73:8080"
+                "http://54.117.20.73:8080",
+                "https://fe-1tsx.vercel.app"
         ));
 
         // 허용할 HTTP 메서드 (OPTIONS 필수)
