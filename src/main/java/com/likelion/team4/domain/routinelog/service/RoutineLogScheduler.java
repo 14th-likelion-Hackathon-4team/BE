@@ -83,10 +83,18 @@ public class RoutineLogScheduler {
             return routineLogs.size();
         } catch (DataIntegrityViolationException e) {
             // 동시에 다른 경로(예: 메인페이지 조회 fallback)에서 먼저 생성한 경우 개별적으로 재시도
+            // IDENTITY 전략은 insert 즉시 id가 채워지므로, 롤백 후에도 기존 객체엔 id가 남아있어
+            // save()가 merge로 처리될 수 있음 -> id 없는 새 엔티티를 만들어서 재시도
             int createdCount = 0;
             for (RoutineLog routineLog : routineLogs) {
+                RoutineLog freshRoutineLog = RoutineLog.builder()
+                        .routine(routineLog.getRoutine())
+                        .logDate(routineLog.getLogDate())
+                        .status(routineLog.getStatus())
+                        .reminderSent(routineLog.getReminderSent())
+                        .build();
                 try {
-                    routineLogRepository.save(routineLog);
+                    routineLogRepository.save(freshRoutineLog);
                     createdCount++;
                 } catch (DataIntegrityViolationException ignored) {
                     log.info(
