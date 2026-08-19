@@ -79,6 +79,11 @@ public class MypageService {
     public UserProfileResponse updateAlarmSettings(Long userId, UpdateAlarmRequest request) {
         User user = getUserById(userId);
 
+        // '직접설정'일 때 분(minutes) 값이 누락되었는지 검증
+        if ("직접설정".equals(request.getAlarmOffsetType()) && request.getAlarmOffsetMinutes() == null) {
+            throw new CustomException(ErrorCode.INVALID_ALARM_OFFSET); // 예: "직접설정 시 알림 시간을 입력해야 합니다."를 나타내는 에러 코드
+        }
+
         user.updateAlarmSettings(
                 request.getRoutineAlarmOn(),
                 request.getAltMissionReminderOn(),
