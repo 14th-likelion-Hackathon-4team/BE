@@ -7,8 +7,12 @@ import com.likelion.team4.domain.routine.repository.RoutineRecordRepository;
 import com.likelion.team4.domain.routine.repository.RoutineRepository;
 import com.likelion.team4.domain.main.entity.Notification;
 import com.likelion.team4.domain.main.repository.NotificationRepository;
+import com.likelion.team4.domain.routinelog.entity.RoutineLog;
+import com.likelion.team4.domain.routinelog.repository.RoutineLogRepository;
 import com.likelion.team4.domain.user.entity.User;
 import com.likelion.team4.domain.user.repository.UserRepository;
+import com.likelion.team4.global.exception.CustomException;
+import com.likelion.team4.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,11 +30,15 @@ public class MainService {
     private final NotificationRepository notificationRepository;
     private final RoutineRecordRepository routineRecordRepository;
     private final UserRepository userRepository;
+    private final RoutineLogRepository routineLogRepository;
 
+    @Transactional
     public MainResponse getMainPage(Long userId) {
 
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 유저입니다."));
+                .orElseThrow(() ->
+                        new CustomException(ErrorCode.USER_NOT_FOUND)
+                );
 
         String today = getToday();
 
@@ -40,21 +48,42 @@ public class MainService {
                         today
                 );
 
+        LocalDate todayDate = LocalDate.now();
+
         List<TodayRoutineResponse> todayRoutines = routines.stream()
                 .map(routine -> {
-                    boolean completed = routineRecordRepository
-                            .findByRoutine_IdAndRecordDate(
+
+                    RoutineRecord routineRecord =
+                            routineRecordRepository
+                                    .findByRoutine_IdAndRecordDate(
+                                            routine.getId(),
+                                            todayDate
+                                    )
+                                    .orElseGet(() ->
+                                            routineRecordRepository.save(
+                                                    RoutineRecord.builder()
+                                                            .routine(routine)
+                                                            .recordDate(todayDate)
+                                                            .completed(false)
+                                                            .build()
+                                            )
+                                    );
+
+                    RoutineLog routineLog = routineLogRepository
+                            .findByRoutine_IdAndLogDate(
                                     routine.getId(),
-                                    LocalDate.now()
+                                    todayDate
                             )
-                            .map(RoutineRecord::isCompleted)
-                            .orElse(false);
+                            .orElseThrow(() ->
+                                    new CustomException(ErrorCode.RESOURCE_NOT_FOUND)
+                            );
 
                     return TodayRoutineResponse.builder()
                             .routineId(routine.getId())
+                            .routineLogId(routineLog.getId())
                             .routineName(routine.getTitle())
                             .scheduledTime(routine.getPerformTime())
-                            .completed(completed)
+                            .completed(routineRecord.isCompleted())
                             .build();
                 })
                 .toList();
@@ -121,7 +150,7 @@ public class MainService {
 
         Notification notification = notificationRepository.findById(notificationId)
                 .orElseThrow(() ->
-                        new IllegalArgumentException("알림을 찾을 수 없습니다.")
+                        new CustomException(ErrorCode.NOTIFICATION_NOT_FOUND)
                 );
 
         notification.read();

@@ -32,7 +32,17 @@ public enum ErrorCode {
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "E500", "서버 내부 오류가 발생했습니다"),
 
     // AI 알림
-    AI_NOTIFICATION_GENERATION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR,"E502","AI 알림 생성에 실패했습니다.");
+    AI_NOTIFICATION_GENERATION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR,"E502","AI 알림 생성에 실패했습니다."),
+
+    ALTERNATIVE_MISSION_NOT_FOUND(HttpStatus.NOT_FOUND, "E404", "대체 미션을 찾을 수 없습니다."),
+
+    ROUTINE_NOT_FOUND(HttpStatus.NOT_FOUND,"E404","루틴을 찾을 수 없습니다."),
+
+    NOTIFICATION_NOT_FOUND(HttpStatus.NOT_FOUND, "E404", "알림을 찾을 수 없습니다."),
+
+    REPORT_NOT_FOUND(HttpStatus.NOT_FOUND, "E404", "존재하지 않는 리포트입니다."),
+
+    USER_NOT_FOUND(HttpStatus.NOT_FOUND,"E404","존재하지 않는 사용자입니다.");
 
     private final HttpStatus status;
     private final String code;

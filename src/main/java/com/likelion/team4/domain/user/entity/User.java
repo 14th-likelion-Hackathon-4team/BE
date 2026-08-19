@@ -87,4 +87,14 @@ public class User {
         this.alarmOffsetMinutes = alarmOffsetMinutes;
         this.updatedAt = LocalDateTime.now();
     }
+
+    public void updateStreak(int currentStreak) {
+        this.currentStreak = currentStreak;
+
+        if (currentStreak > this.maxStreak) {
+            this.maxStreak = currentStreak;
+        }
+
+        this.updatedAt = LocalDateTime.now();
+    }
 }
