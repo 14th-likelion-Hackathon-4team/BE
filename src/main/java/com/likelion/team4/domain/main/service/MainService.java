@@ -7,6 +7,8 @@ import com.likelion.team4.domain.routine.repository.RoutineRecordRepository;
 import com.likelion.team4.domain.routine.repository.RoutineRepository;
 import com.likelion.team4.domain.main.entity.Notification;
 import com.likelion.team4.domain.main.repository.NotificationRepository;
+import com.likelion.team4.domain.routinelog.entity.RoutineLog;
+import com.likelion.team4.domain.routinelog.repository.RoutineLogRepository;
 import com.likelion.team4.domain.user.entity.User;
 import com.likelion.team4.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +28,7 @@ public class MainService {
     private final NotificationRepository notificationRepository;
     private final RoutineRecordRepository routineRecordRepository;
     private final UserRepository userRepository;
+    private final RoutineLogRepository routineLogRepository;
 
     @Transactional
     public MainResponse getMainPage(Long userId) {
@@ -64,9 +67,18 @@ public class MainService {
                                             )
                                     );
 
+                    RoutineLog routineLog = routineLogRepository
+                            .findByRoutine_IdAndLogDate(
+                                    routine.getId(),
+                                    todayDate
+                            )
+                            .orElseThrow(() ->
+                                    new CustomException(ErrorCode.RESOURCE_NOT_FOUND)
+                            );
+
                     return TodayRoutineResponse.builder()
                             .routineId(routine.getId())
-                            .routineLogId(routineRecord.getId())
+                            .routineLogId(routineLog.getId())
                             .routineName(routine.getTitle())
                             .scheduledTime(routine.getPerformTime())
                             .completed(routineRecord.isCompleted())
