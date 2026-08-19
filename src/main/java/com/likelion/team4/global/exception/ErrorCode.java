@@ -14,6 +14,7 @@ public enum ErrorCode {
     INVALID_TOKEN(HttpStatus.UNAUTHORIZED, "E401", "유효하지 않은 토큰입니다"),
     EXPIRED_REFRESH_TOKEN(HttpStatus.UNAUTHORIZED, "E401", "Refresh Token이 유효하지 않습니다. 다시 로그인해주세요"),
     DUPLICATE_LOGIN_ID(HttpStatus.CONFLICT, "E409", "이미 사용 중인 아이디입니다"),
+    INVALID_ALARM_OFFSET(HttpStatus.BAD_REQUEST, "E400", "알림 시간을 직접 설정할 경우, 분(minutes) 값을 반드시 입력해야 합니다."),
 
     // 비밀번호 변경
     INVALID_PASSWORD(HttpStatus.BAD_REQUEST, "E400", "현재 비밀번호가 일치하지 않습니다."),

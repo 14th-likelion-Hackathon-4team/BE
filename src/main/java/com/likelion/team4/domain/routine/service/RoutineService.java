@@ -125,6 +125,11 @@ public class RoutineService {
     }
 
     private void validateAndSetRepeatData(RoutineRequest request) {
+        // 시작일과 종료일 역전 현상 방지
+        if (request.getEndDate() != null && request.getEndDate().isBefore(request.getStartDate())) {
+            throw new CustomException(ErrorCode.INVALID_INPUT); // 필요시 별도의 에러 메시지(예: "종료일은 시작일보다 빠를 수 없습니다.") 정의
+        }
+
         if (request.getRepeatType() == RepeatType.WEEKLY) {
             if (request.getRepeatDays() == null || request.getRepeatDays().trim().isEmpty()) {
                 throw new CustomException(ErrorCode.INVALID_INPUT); // "WEEKLY 타입은 요일 지정이 필수입니다."
@@ -140,6 +145,13 @@ public class RoutineService {
             if (request.getRepeatCount() == null || request.getRepeatCount() <= 0) {
                 throw new CustomException(ErrorCode.INVALID_INPUT); // "COUNT 타입은 반복 횟수가 필수입니다."
             }
+
+            // COUNT 타입은 특정 요일이 없으므로 알람 설정 원천 차단
+            // RoutineRequest의 alarm 필드는 @NotNull이므로 NullPointerException 걱정 없이 바로 조건문 사용 가능
+            if (request.getAlarm()) {
+                throw new CustomException(ErrorCode.INVALID_INPUT); // 필요시 별도의 에러 메시지(예: "COUNT 타입 루틴은 알람을 설정할 수 없습니다.") 정의
+            }
+
             request.setRepeatDays(null); // COUNT는 요일 정보 불필요하므로 null 처리
         }
     }

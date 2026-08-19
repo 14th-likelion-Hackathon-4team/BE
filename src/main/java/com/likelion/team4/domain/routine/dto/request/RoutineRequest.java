@@ -5,6 +5,8 @@ import com.likelion.team4.domain.routine.entity.enums.RepeatType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -19,12 +21,15 @@ import java.time.LocalTime;
 @AllArgsConstructor
 public class RoutineRequest {
     @NotBlank(message = "타이틀은 필수 입력값입니다.")
+    @Size(max = 100, message = "루틴 제목은 최대 100자까지 입력 가능합니다.")
     private String title;
 
     @Schema(type = "string", example = "07:30:00", description = "루틴 수행 시간")
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "HH:mm:ss") // (선택) 확실한 직렬화/역직렬화를 위해
     private LocalTime performTime;
 
+    @Pattern(regexp = "^(MON|TUE|WED|THU|FRI|SAT|SUN)(,(MON|TUE|WED|THU|FRI|SAT|SUN))*$",
+            message = "요일 형식이 올바르지 않습니다.")
     private String repeatDays;
 
     @NotNull(message = "알림 여부는 필수 입력값입니다.")

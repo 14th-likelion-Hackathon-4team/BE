@@ -1,5 +1,7 @@
 package com.likelion.team4.domain.user.dto.request;
 
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import lombok.Getter;
@@ -24,5 +26,7 @@ public class UpdateAlarmRequest {
     private String alarmOffsetType;
 
     // CUSTOM이 아닌 경우 null이 들어올 수 있으므로 NotNull을 제외합니다.
+    @Min(value = 1, message = "알림 시간은 최소 1분 이상이어야 합니다.")
+    @Max(value = 1440, message = "알림 시간은 최대 1440분(24시간)까지만 설정 가능합니다.")
     private Integer alarmOffsetMinutes;
 }
