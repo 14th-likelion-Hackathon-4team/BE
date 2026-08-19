@@ -4,6 +4,7 @@ import com.likelion.team4.domain.main.entity.Notification;
 import com.likelion.team4.domain.main.repository.NotificationRepository;
 import com.likelion.team4.domain.routine.entity.Routine;
 import com.likelion.team4.domain.routine.repository.RoutineRepository;
+import com.likelion.team4.global.util.DayOfWeekUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -44,15 +45,7 @@ public class RoutineAlarmScheduler {
                 now
         );
 
-        String todayDay = switch (today.getDayOfWeek()) {
-            case MONDAY -> "MON";
-            case TUESDAY -> "TUE";
-            case WEDNESDAY -> "WED";
-            case THURSDAY -> "THU";
-            case FRIDAY -> "FRI";
-            case SATURDAY -> "SAT";
-            case SUNDAY -> "SUN";
-        };
+        String todayDay = DayOfWeekUtil.toDayCode(today.getDayOfWeek());
 
         List<Routine> routines =
                 routineRepository.findTargetRoutines(

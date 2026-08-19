@@ -76,4 +76,18 @@ public interface RoutineRepository extends JpaRepository<Routine, Long> {
             @Param("todayDay") String todayDay,
             @Param("now") LocalTime now
     );
+
+    @Query("""
+    SELECT r
+    FROM Routine r
+    WHERE r.active = true
+      AND r.deletedAt IS NULL
+      AND r.startDate <= :today
+      AND (r.endDate IS NULL OR r.endDate >= :today)
+      AND r.repeatDays LIKE CONCAT('%', :todayDay, '%')
+""")
+    List<Routine> findAllTodayTargetRoutines(
+            @Param("today") LocalDate today,
+            @Param("todayDay") String todayDay
+    );
 }
