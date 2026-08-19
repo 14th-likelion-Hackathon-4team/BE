@@ -7,6 +7,7 @@ import com.likelion.team4.domain.routinelog.repository.RoutineLogRepository;
 import com.likelion.team4.global.util.DayOfWeekUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -25,7 +26,6 @@ public class RoutineLogScheduler {
 
     private final RoutineRepository routineRepository;
     private final RoutineLogRepository routineLogRepository;
-    private final RoutineLogWriter routineLogWriter;
 
     @Scheduled(cron = "0 0 0 * * *", zone = "Asia/Seoul")
     public void createTodayRoutineLogs() {
@@ -66,13 +66,36 @@ public class RoutineLogScheduler {
                         .build())
                 .toList();
 
-        // 3. 저장 (이 구간만 트랜잭션 - RoutineLogWriter)
-        int createdCount = routineLogWriter.saveAll(newRoutineLogs);
+        // 3. 저장 - Spring Data JPA의 save/saveAll은 호출마다 자체 트랜잭션을 가지므로
+        //    별도로 @Transactional을 씌우지 않아도 각 건은 트랜잭션 보장 하에 처리됨
+        int createdCount = saveRoutineLogs(newRoutineLogs);
 
         log.info(
                 "=== RoutineLog 생성 완료: {}건 (대상 {}건) ===",
                 createdCount,
                 targetRoutines.size()
         );
+    }
+
+    private int saveRoutineLogs(List<RoutineLog> routineLogs) {
+        try {
+            routineLogRepository.saveAll(routineLogs);
+            return routineLogs.size();
+        } catch (DataIntegrityViolationException e) {
+            // 동시에 다른 경로(예: 메인페이지 조회 fallback)에서 먼저 생성한 경우 개별적으로 재시도
+            int createdCount = 0;
+            for (RoutineLog routineLog : routineLogs) {
+                try {
+                    routineLogRepository.save(routineLog);
+                    createdCount++;
+                } catch (DataIntegrityViolationException ignored) {
+                    log.info(
+                            "RoutineLog 중복 생성 시도 무시: routineId={}",
+                            routineLog.getRoutine().getId()
+                    );
+                }
+            }
+            return createdCount;
+        }
     }
 }
