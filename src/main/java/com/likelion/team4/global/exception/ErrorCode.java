@@ -42,7 +42,11 @@ public enum ErrorCode {
 
     REPORT_NOT_FOUND(HttpStatus.NOT_FOUND, "E404", "존재하지 않는 리포트입니다."),
 
-    USER_NOT_FOUND(HttpStatus.NOT_FOUND,"E404","존재하지 않는 사용자입니다.");
+    USER_NOT_FOUND(HttpStatus.NOT_FOUND,"E404","존재하지 않는 사용자입니다."),
+
+    ROUTINE_NOT_YET_TIME(HttpStatus.BAD_REQUEST, "E400", "아직 수행 시간이 되지 않았습니다."),
+
+    ALREADY_COMPLETED_ROUTINE(HttpStatus.CONFLICT, "E409", "이미 완료된 루틴입니다.");
 
     private final HttpStatus status;
     private final String code;

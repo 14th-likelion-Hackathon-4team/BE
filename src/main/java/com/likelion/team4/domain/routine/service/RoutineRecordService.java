@@ -30,12 +30,16 @@ public class RoutineRecordService {
     public RoutineCompleteResponse completeRoutine(Long routineId) {
 
         Routine routine = routineRepository.findById(routineId)
-                .orElseThrow(() ->
-                        new CustomException(ErrorCode.ROUTINE_NOT_FOUND)
-                );
+                .orElseThrow(() -> new CustomException(ErrorCode.ROUTINE_NOT_FOUND));
 
-        LocalDate today = LocalDate.now(SEOUL_ZONE);
-        LocalDateTime completedAt = LocalDateTime.now(SEOUL_ZONE);
+        LocalDateTime now = LocalDateTime.now(SEOUL_ZONE);
+        LocalDate today = now.toLocalDate();
+
+        // ✓ 수행 시간 이전이면 완료 불가
+        if (routine.getPerformTime() != null
+                && now.toLocalTime().isBefore(routine.getPerformTime())) {
+            throw new CustomException(ErrorCode.ROUTINE_NOT_YET_TIME);
+        }
 
         RoutineRecord record = routineRecordRepository
                 .findByRoutine_IdAndRecordDate(routineId, today)
@@ -45,21 +49,21 @@ public class RoutineRecordService {
                         .status(RoutineRecordStatus.PENDING)
                         .build());
 
-        record.complete();
+        // ✓ 이미 완료된 루틴 중복 방지
+        if (record.getStatus() == RoutineRecordStatus.COMPLETED) {
+            throw new CustomException(ErrorCode.ALREADY_COMPLETED_ROUTINE);
+        }
 
+        record.complete();
         routineRecordRepository.save(record);
 
-        // 루틴 완료 후 연속 기록 갱신
-        streakService.updateStreak(
-                routine.getUser().getId(),
-                routineId,
-                today
-        );
+        streakService.updateStreak(routine.getUser().getId(), routineId, today);
 
         return RoutineCompleteResponse.builder()
                 .routineId(routineId)
-                .completed(record.getStatus() == RoutineRecordStatus.COMPLETED)
-                .completedAt(completedAt)
+                .completed(true)
+                .completedAt(now)
                 .build();
     }
+
 }
