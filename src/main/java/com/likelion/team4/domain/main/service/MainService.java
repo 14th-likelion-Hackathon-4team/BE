@@ -19,12 +19,15 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class MainService {
+
+    private static final ZoneId SEOUL_ZONE = ZoneId.of("Asia/Seoul");
 
     private final RoutineRepository routineRepository;
     private final NotificationRepository notificationRepository;
@@ -48,7 +51,7 @@ public class MainService {
                         today
                 );
 
-        LocalDate todayDate = LocalDate.now();
+        LocalDate todayDate = LocalDate.now(SEOUL_ZONE);
 
         List<TodayRoutineResponse> todayRoutines = routines.stream()
                 .map(routine -> {
@@ -95,7 +98,7 @@ public class MainService {
     }
 
     private String getToday() {
-        return switch (LocalDate.now().getDayOfWeek()) {
+        return switch (LocalDate.now(SEOUL_ZONE).getDayOfWeek()) {
             case MONDAY -> "MON";
             case TUESDAY -> "TUE";
             case WEDNESDAY -> "WED";
@@ -108,7 +111,7 @@ public class MainService {
 
     public TodayNotificationListResponse getTodayNotifications(Long userId) {
 
-        LocalDate today = LocalDate.now();
+        LocalDate today = LocalDate.now(SEOUL_ZONE);
 
         LocalDateTime start = today.atStartOfDay();
         LocalDateTime end = today.plusDays(1).atStartOfDay();
@@ -161,6 +164,4 @@ public class MainService {
                 .readAt(notification.getReadAt())
                 .build();
     }
-
-
 }

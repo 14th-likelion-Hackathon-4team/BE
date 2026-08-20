@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 
 @Service
 @RequiredArgsConstructor
@@ -28,7 +29,8 @@ public class NotificationService {
                 .routine(routine)
                 .content(content)
                 .read(false)
-                .createdAt(LocalDateTime.now())
+                .createdAt(
+                        LocalDateTime.now(ZoneId.of("Asia/Seoul")))
                 .build();
 
         return notificationRepository.save(notification);
