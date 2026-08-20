@@ -10,7 +10,9 @@ import java.time.LocalDate;
  */
 public record PreparedMissionContext(
         Long chatId,
+        String routineTitle,
         String causeTag,
+        String userReason,
         LocalDate missionDate,
         Long pendingMissionId
 ) {

@@ -45,15 +45,18 @@ public class MissionGenerationHelper {
                 .map(AlternativeMission::getId)
                 .orElse(null);
 
-        // 대화에서 원인 태그 가져오기
-        String causeTag = aiChatMessageRepository
-                .findFirstByAiChatIdAndRoleOrderByCreatedAtAsc(chatId, MessageRole.USER)
-                .map(AiChatMessage::getCauseTag)
-                .orElse("기타");
+        // 대화에서 원인 태그 + 사용자가 직접 쓴 설명 가져오기
+        Optional<AiChatMessage> firstUserMessage = aiChatMessageRepository
+                .findFirstByAiChatIdAndRoleOrderByCreatedAtAsc(chatId, MessageRole.USER);
+
+        String causeTag = firstUserMessage.map(AiChatMessage::getCauseTag).orElse("기타");
+        String userReason = firstUserMessage.map(AiChatMessage::getContent).orElse("");
 
         return new PreparedMissionContext(
                 chatId,
+                chat.getRoutineLog().getRoutine().getTitle(),
                 causeTag,
+                userReason,
                 chat.getRoutineLog().getLogDate(),
                 pendingMissionId
         );
