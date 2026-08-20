@@ -21,6 +21,7 @@ import com.likelion.team4.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -192,6 +193,14 @@ public class ChatService {
             routineLogStatus = "미완료";
         } else {
             throw new CustomException(ErrorCode.INVALID_INPUT);
+        }
+
+        try {
+            // 낙관적 락 충돌은 커밋 시점에 발생하므로, 여기서 강제로 flush해서 그 자리에서 잡음
+            alternativeMissionRepository.saveAndFlush(mission);
+        } catch (ObjectOptimisticLockingFailureException e) {
+            // 동시 요청으로 다른 트랜잭션이 먼저 처리한 경우
+            throw new CustomException(ErrorCode.ALREADY_PROCESSED_MISSION);
         }
 
         mission.getAiChat().getRoutineLog().updateStatus(routineLogStatus);

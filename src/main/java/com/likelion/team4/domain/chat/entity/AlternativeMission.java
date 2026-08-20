@@ -46,6 +46,9 @@ public class AlternativeMission {
     @Column(nullable = false)
     private LocalDate missionDate;
 
+    @Version
+    private Long version;
+
     @Builder
     public AlternativeMission(
             AiChat aiChat,
