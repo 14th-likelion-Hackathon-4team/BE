@@ -226,13 +226,20 @@ public class ChatService {
                         "어느 정도 연결되어야 합니다.\n" +
                         "2. 너무 쉽게 끝낼 수 있는 수준으로 낮추지 말고, 원래 루틴보다는 부담이 적지만 " +
                         "의미 있는 수준으로 제안하세요.\n" +
-                        "3. 아래는 스타일 참고용 예시입니다 (그대로 복사하지 말고, 이번 상황에 맞게 새로 생성하세요):\n" +
+                        "3. 원래 루틴이 '하루 물 2L 마시기'처럼 하루 전체에 걸쳐 수행하는 습관이어도, " +
+                        "대체 미션은 지금 당장 짧게 실행할 수 있는 구체적인 행동 하나여야 합니다 " +
+                        "(예: 하루 물 2L 마시기 → 지금 물 한 컵 마시기).\n" +
+                        "4. durationMinutes는 그 대체 미션 하나를 실제로 수행하는 데 걸리는 시간만 의미하며, " +
+                        "5~120 사이의 현실적인 숫자여야 하고 보통은 60분 이내로 제안하세요. " +
+                        "하루 종일/여러 시간에 걸친 시간을 넣지 마세요.\n" +
+                        "5. 아래는 스타일 참고용 예시입니다 (그대로 복사하지 말고, 이번 상황에 맞게 새로 생성하세요):\n" +
                         "   - 오늘 운동하기 / 갑자기 약속이 잡힘 → 단백질 쉐이크 1잔 마시고 약속 장소까지 걸어가기\n" +
                         "   - 헬스장 가기 / 피로가 너무 심함 → 집에서 가볍게 맨몸운동 하기\n" +
                         "   - 책 30분 읽기 / 집중이 안 됨 → 책상 정리 10분 하기\n" +
-                        "   - 하루 만보 걷기 / 비가 옴 → 집에서 15분 움직이기\n\n" +
+                        "   - 하루 만보 걷기 / 비가 옴 → 집에서 15분 움직이기\n" +
+                        "   - 하루 물 2L 마시기 / 물을 자주 못 마심 → 지금 물 한 컵 마시기\n\n" +
                         "반드시 아래 JSON 형식으로만 응답하세요. 다른 텍스트는 절대 포함하지 마세요:\n" +
-                        "{\"content\": \"미션 내용\", \"durationMinutes\": 숫자, \"difficulty\": \"쉬움 또는 보통 또는 어려움\"}",
+                        "{\"content\": \"미션 내용\", \"durationMinutes\": 5~120 사이의 숫자, \"difficulty\": \"쉬움 또는 보통 또는 어려움\"}",
                 routineTitle, causeTag, reasonText, routineTitle
         );
 
@@ -260,7 +267,16 @@ public class ChatService {
 
             com.fasterxml.jackson.databind.ObjectMapper mapper =
                     new com.fasterxml.jackson.databind.ObjectMapper();
-            return mapper.readValue(text, Map.class);
+            Map<String, Object> missionData = mapper.readValue(text, Map.class);
+
+            // GPT가 프롬프트 지시(5~120분)를 안 지킬 수 있으므로 서버에서 한 번 더 안전하게 clamp
+            Object durationRaw = missionData.get("durationMinutes");
+            if (durationRaw instanceof Number number) {
+                int clamped = Math.max(5, Math.min(120, number.intValue()));
+                missionData.put("durationMinutes", clamped);
+            }
+
+            return missionData;
 
         } catch (WebClientResponseException e) {
             log.error(
