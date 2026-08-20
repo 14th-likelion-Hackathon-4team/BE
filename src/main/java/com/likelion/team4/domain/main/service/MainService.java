@@ -18,6 +18,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.likelion.team4.domain.chat.entity.AlternativeMission;
+import com.likelion.team4.domain.chat.entity.enums.MissionStatus;
 import com.likelion.team4.domain.chat.repository.AlternativeMissionRepository;
 
 import java.time.LocalDate;
@@ -124,7 +125,7 @@ public class MainService {
                             )
                             .alternativeMissionCompleted(
                                     alternativeMission != null
-                                            ? "COMPLETED".equals(alternativeMission.getStatus())
+                                            ? alternativeMission.getStatus() == MissionStatus.COMPLETED
                                             : null
                             )
                             .alternativeMissionCompletedAt(
