@@ -30,9 +30,6 @@ public class AlternativeMission {
     @Column(name = "mission_date", nullable = false)
     private LocalDate missionDate;
 
-    @Column(nullable = false)
-    private boolean completed;
-
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private MissionStatus status;
@@ -41,4 +38,7 @@ public class AlternativeMission {
         this.status = MissionStatus.COMPLETED;
     }
 
+    public boolean isCompleted() {
+        return this.status == MissionStatus.COMPLETED;
+    }
 }

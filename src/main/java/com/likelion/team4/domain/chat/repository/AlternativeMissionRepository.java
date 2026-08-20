@@ -23,4 +23,10 @@ public interface AlternativeMissionRepository extends JpaRepository<AlternativeM
             LocalDate missionDate,
             String status
     );
+
+    Optional<AlternativeMission>
+    findTopByAiChat_RoutineLog_Routine_IdAndMissionDateOrderByCreatedAtDesc(
+            Long routineId,
+            LocalDate missionDate
+    );
 }

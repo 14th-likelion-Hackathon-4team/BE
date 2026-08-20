@@ -17,6 +17,8 @@ import com.likelion.team4.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.likelion.team4.domain.chat.entity.AlternativeMission;
+import com.likelion.team4.domain.chat.repository.AlternativeMissionRepository;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -35,6 +37,7 @@ public class MainService {
     private final RoutineRecordRepository routineRecordRepository;
     private final UserRepository userRepository;
     private final RoutineLogRepository routineLogRepository;
+    private final AlternativeMissionRepository alternativeMissionRepository;
 
     @Transactional
     public MainResponse getMainPage(Long userId) {
@@ -73,11 +76,62 @@ public class MainService {
                                             )
                                     );
 
+                    // 오늘 해당 루틴의 최신 대체 미션 조회
+                    AlternativeMission alternativeMission =
+                            alternativeMissionRepository
+                                    .findTopByAiChat_RoutineLog_Routine_IdAndMissionDateOrderByCreatedAtDesc(
+                                            routine.getId(),
+                                            todayDate
+                                    )
+                                    .orElse(null);
+
+                    // 기존 루틴 자체의 완료 여부
+                    boolean routineCompleted =
+                            routineRecord.getStatus() == RoutineRecordStatus.COMPLETED;
+
+                    String routineStatus =
+                            determineRoutineStatus(
+                                    routineCompleted,
+                                    alternativeMission
+                            );
+
                     return TodayRoutineResponse.builder()
                             .routineId(routine.getId())
                             .routineName(routine.getTitle())
                             .scheduledTime(routine.getPerformTime())
-                            .completed(routineRecord.getStatus() == RoutineRecordStatus.COMPLETED)
+
+                            // 기존 루틴 완료 여부
+                            .completed(routineCompleted)
+
+                            // 전체 표시 상태
+                            .routineStatus(routineStatus)
+
+                            // 대체 미션 정보
+                            .alternativeMissionId(
+                                    alternativeMission != null
+                                            ? alternativeMission.getId()
+                                            : null
+                            )
+                            .alternativeMissionTitle(
+                                    alternativeMission != null
+                                            ? alternativeMission.getContent()
+                                            : null
+                            )
+                            .alternativeMissionStatus(
+                                    alternativeMission != null
+                                            ? alternativeMission.getStatus()
+                                            : null
+                            )
+                            .alternativeMissionCompleted(
+                                    alternativeMission != null
+                                            ? "COMPLETED".equals(alternativeMission.getStatus())
+                                            : null
+                            )
+                            .alternativeMissionCompletedAt(
+                                    alternativeMission != null
+                                            ? alternativeMission.getCompletedAt()
+                                            : null
+                            )
                             .build();
                 })
                 .toList();
@@ -154,5 +208,26 @@ public class MainService {
                 .isRead(notification.isRead())
                 .readAt(notification.getReadAt())
                 .build();
+    }
+
+    private String determineRoutineStatus(
+            boolean routineCompleted,
+            AlternativeMission alternativeMission
+    ) {
+
+        if (routineCompleted) {
+            return "COMPLETED";
+        }
+
+        if (alternativeMission == null) {
+            return "WAITING";
+        }
+
+        return switch (alternativeMission.getStatus()) {
+            case "COMPLETED" -> "ALTERNATIVE_COMPLETED";
+            case "REJECTED" -> "ALTERNATIVE_REJECTED";
+            case "ACCEPTED", "PENDING" -> "ALTERNATIVE_IN_PROGRESS";
+            default -> "WAITING";
+        };
     }
 }
