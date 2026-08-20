@@ -61,9 +61,13 @@ public class ChatService {
 
     // 1. 대화 시작 (routineId 기준 - 오늘자 RoutineLog가 없으면 이 시점에 생성)
     @Transactional
-    public ChatStartResponse startChat(Long routineId) {
+    public ChatStartResponse startChat(Long routineId, Long userId) {
         Routine routine = routineRepository.findById(routineId)
                 .orElseThrow(() -> new CustomException(ErrorCode.RESOURCE_NOT_FOUND));
+
+        if (!routine.getUser().getId().equals(userId)) {
+            throw new CustomException(ErrorCode.FORBIDDEN_ACCESS);
+        }
 
         RoutineLog routineLog = getOrCreateTodayRoutineLog(routine);
         Long routineLogId = routineLog.getId();
@@ -127,9 +131,13 @@ public class ChatService {
 
     // 2. 원인 답변 전송
     @Transactional
-    public ChatMessageResponse sendMessage(Long chatId, ChatMessageRequest request) {
+    public ChatMessageResponse sendMessage(Long chatId, ChatMessageRequest request, Long userId) {
         AiChat chat = aiChatRepository.findById(chatId)
                 .orElseThrow(() -> new CustomException(ErrorCode.RESOURCE_NOT_FOUND));
+
+        if (!chat.getRoutineLog().getRoutine().getUser().getId().equals(userId)) {
+            throw new CustomException(ErrorCode.FORBIDDEN_ACCESS);
+        }
 
         AiChatMessage message = AiChatMessage.builder()
                 .aiChat(chat)
@@ -145,8 +153,8 @@ public class ChatService {
     // 3. 대체 미션 생성 (GPT API 호출)
     // 트랜잭션은 DB 준비 단계(prepare)와 저장 단계(saveMission)에만 짧게 걸림.
     // GPT 호출(최대 10초 블로킹) 동안은 DB 커넥션을 붙잡지 않음.
-    public MissionGenerateResponse generateMission(Long chatId) {
-        PreparedMissionContext context = missionGenerationHelper.prepare(chatId);
+    public MissionGenerateResponse generateMission(Long chatId, Long userId) {
+        PreparedMissionContext context = missionGenerationHelper.prepare(chatId, userId);
 
         Map<String, Object> missionData = callGptApi(
                 context.routineTitle(), context.causeTag(), context.userReason()
@@ -164,9 +172,13 @@ public class ChatService {
 
     // 4. 대체 미션 수락/거절
     @Transactional
-    public MissionActionResponse handleMissionAction(Long missionId, MissionActionRequest request) {
+    public MissionActionResponse handleMissionAction(Long missionId, MissionActionRequest request, Long userId) {
         AlternativeMission mission = alternativeMissionRepository.findById(missionId)
                 .orElseThrow(() -> new CustomException(ErrorCode.RESOURCE_NOT_FOUND));
+
+        if (!mission.getAiChat().getRoutineLog().getRoutine().getUser().getId().equals(userId)) {
+            throw new CustomException(ErrorCode.FORBIDDEN_ACCESS);
+        }
 
         if (mission.getStatus() != MissionStatus.PENDING) {
             throw new CustomException(ErrorCode.ALREADY_PROCESSED_MISSION);
@@ -199,7 +211,7 @@ public class ChatService {
 
     //5.대체미션 클리어
     @Transactional
-    public AlternativeMissionCompleteResponse completeMission(Long missionId) {
+    public AlternativeMissionCompleteResponse completeMission(Long missionId, Long userId) {
 
         AlternativeMission mission =
                 alternativeMissionRepository.findById(missionId)
@@ -207,6 +219,10 @@ public class ChatService {
                                 new CustomException(
                                         ErrorCode.ALTERNATIVE_MISSION_NOT_FOUND
                                 ));
+
+        if (!mission.getAiChat().getRoutineLog().getRoutine().getUser().getId().equals(userId)) {
+            throw new CustomException(ErrorCode.FORBIDDEN_ACCESS);
+        }
 
         mission.complete();
 

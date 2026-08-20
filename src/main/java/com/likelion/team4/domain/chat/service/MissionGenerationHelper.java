@@ -36,9 +36,13 @@ public class MissionGenerationHelper {
     private final AlternativeMissionRepository alternativeMissionRepository;
 
     @Transactional(readOnly = true)
-    public PreparedMissionContext prepare(Long chatId) {
+    public PreparedMissionContext prepare(Long chatId, Long userId) {
         AiChat chat = aiChatRepository.findById(chatId)
                 .orElseThrow(() -> new CustomException(ErrorCode.RESOURCE_NOT_FOUND));
+
+        if (!chat.getRoutineLog().getRoutine().getUser().getId().equals(userId)) {
+            throw new CustomException(ErrorCode.FORBIDDEN_ACCESS);
+        }
 
         Long pendingMissionId = alternativeMissionRepository
                 .findByAiChatIdAndStatus(chatId, MissionStatus.PENDING)
