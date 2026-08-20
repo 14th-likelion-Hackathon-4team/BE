@@ -32,8 +32,8 @@ public class RoutineRecordService {
         Routine routine = routineRepository.findById(routineId)
                 .orElseThrow(() -> new CustomException(ErrorCode.ROUTINE_NOT_FOUND));
 
-        LocalDate today = LocalDate.now(SEOUL_ZONE);
         LocalDateTime now = LocalDateTime.now(SEOUL_ZONE);
+        LocalDate today = now.toLocalDate();
 
         // ✓ 수행 시간 이전이면 완료 불가
         if (routine.getPerformTime() != null
