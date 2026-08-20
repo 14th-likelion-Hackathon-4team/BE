@@ -145,13 +145,13 @@ public class ChatService {
 
         Map<String, Object> missionData = callGptApi(context.causeTag());
 
-        AlternativeMission newMission = missionGenerationHelper.saveMission(
-                chatId, missionData, context.missionDate()
+        MissionSaveResult result = missionGenerationHelper.saveMission(
+                chatId, context.pendingMissionId(), missionData, context.missionDate()
         );
 
         return new MissionGenerateResponse(
-                new MissionResponse(newMission),
-                context.previousMission()
+                new MissionResponse(result.newMission()),
+                result.previousMission()
         );
     }
 
