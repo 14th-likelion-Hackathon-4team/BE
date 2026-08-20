@@ -151,13 +151,10 @@ public class ChatService {
             previousMission = new MissionResponse(pendingMission.get());
         }
 
-        // 대화에서 원인 태그 가져오기
-        List<AiChatMessage> messages = aiChatMessageRepository
-                .findByAiChatIdOrderByCreatedAtAsc(chatId);
-        String causeTag = messages.stream()
-                .filter(m -> m.getRole() == MessageRole.USER)
+        // 대화에서 원인 태그 가져오기 (첫 USER 메시지 1건만 조회)
+        String causeTag = aiChatMessageRepository
+                .findFirstByAiChatIdAndRoleOrderByCreatedAtAsc(chatId, MessageRole.USER)
                 .map(AiChatMessage::getCauseTag)
-                .findFirst()
                 .orElse("기타");
 
         // GPT API 호출
