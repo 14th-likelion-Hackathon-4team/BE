@@ -11,8 +11,8 @@ import com.likelion.team4.domain.main.repository.NotificationRepository;
 import com.likelion.team4.domain.routine.entity.Routine;
 import com.likelion.team4.domain.routine.entity.RoutineRecord;
 import com.likelion.team4.domain.routine.entity.enums.RoutineRecordStatus;
-import com.likelion.team4.domain.routine.repository.RoutineRecordRepository;
 import com.likelion.team4.domain.routine.repository.RoutineRepository;
+import com.likelion.team4.domain.routine.service.RoutineRecordProvisioner;
 import com.likelion.team4.domain.routinelog.entity.RoutineLog;
 import com.likelion.team4.domain.routinelog.repository.RoutineLogRepository;
 import com.likelion.team4.domain.user.entity.User;
@@ -50,7 +50,7 @@ class MainServiceTest {
     @Mock
     private NotificationRepository notificationRepository;
     @Mock
-    private RoutineRecordRepository routineRecordRepository;
+    private RoutineRecordProvisioner routineRecordProvisioner;
     @Mock
     private UserRepository userRepository;
     @Mock
@@ -99,7 +99,7 @@ class MainServiceTest {
         when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
         when(routineRepository.findAllByUser_IdAndRepeatDaysContainingAndDeletedAtIsNull(any(), any()))
                 .thenReturn(List.of(routine));
-        when(routineRecordRepository.findByRoutine_IdAndRecordDate(anyLong(), any()))
+        when(routineRecordProvisioner.find(anyLong(), any()))
                 .thenReturn(Optional.of(routineRecord));
         when(alternativeMissionRepository
                 .findTopByAiChat_RoutineLog_Routine_IdAndMissionDateOrderByCreatedAtDesc(anyLong(), any()))
