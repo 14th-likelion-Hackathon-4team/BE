@@ -72,18 +72,8 @@ public class MainService {
                                             )
                                     );
 
-                    RoutineLog routineLog = routineLogRepository
-                            .findByRoutine_IdAndLogDate(
-                                    routine.getId(),
-                                    todayDate
-                            )
-                            .orElseThrow(() ->
-                                    new CustomException(ErrorCode.RESOURCE_NOT_FOUND)
-                            );
-
                     return TodayRoutineResponse.builder()
                             .routineId(routine.getId())
-                            .routineLogId(routineLog.getId())
                             .routineName(routine.getTitle())
                             .scheduledTime(routine.getPerformTime())
                             .completed(routineRecord.isCompleted())
