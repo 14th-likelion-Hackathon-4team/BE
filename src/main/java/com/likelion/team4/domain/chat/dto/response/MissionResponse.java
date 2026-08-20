@@ -17,6 +17,6 @@ public class MissionResponse {
         this.content = mission.getContent();
         this.durationMinutes = mission.getDurationMinutes();
         this.difficulty = mission.getDifficulty();
-        this.status = mission.getStatus();
+        this.status = mission.getStatus().name();
     }
 }

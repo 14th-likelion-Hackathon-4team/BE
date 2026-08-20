@@ -16,7 +16,7 @@ public class ChatMessageResponse {
 
     public ChatMessageResponse(AiChatMessage message) {
         this.id = message.getId();
-        this.role = message.getRole();
+        this.role = message.getRole().name();
         this.content = message.getContent();
         this.causeTag = message.getCauseTag();
         this.createdAt = message.getCreatedAt();
