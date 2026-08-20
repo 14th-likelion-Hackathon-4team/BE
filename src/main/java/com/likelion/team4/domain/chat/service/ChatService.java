@@ -224,7 +224,19 @@ public class ChatService {
             throw new CustomException(ErrorCode.FORBIDDEN_ACCESS);
         }
 
+        if (mission.getStatus() != MissionStatus.ACCEPTED) {
+            throw new CustomException(ErrorCode.ALREADY_PROCESSED_MISSION);
+        }
+
         mission.complete();
+
+        try {
+            // 낙관적 락 충돌은 커밋 시점에 발생하므로, 여기서 강제로 flush해서 그 자리에서 잡음
+            alternativeMissionRepository.saveAndFlush(mission);
+        } catch (ObjectOptimisticLockingFailureException e) {
+            // 동시 요청으로 다른 트랜잭션이 먼저 완료 처리한 경우
+            throw new CustomException(ErrorCode.ALREADY_PROCESSED_MISSION);
+        }
 
         return AlternativeMissionCompleteResponse.builder()
                 .missionId(missionId)
