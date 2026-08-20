@@ -6,6 +6,8 @@ import com.likelion.team4.domain.chat.dto.response.*;
 import com.likelion.team4.domain.chat.entity.AiChat;
 import com.likelion.team4.domain.chat.entity.AiChatMessage;
 import com.likelion.team4.domain.chat.entity.AlternativeMission;
+import com.likelion.team4.domain.chat.entity.enums.MessageRole;
+import com.likelion.team4.domain.chat.entity.enums.MissionStatus;
 import com.likelion.team4.domain.chat.repository.AiChatMessageRepository;
 import com.likelion.team4.domain.chat.repository.AiChatRepository;
 import com.likelion.team4.domain.chat.repository.AlternativeMissionRepository;
@@ -18,7 +20,6 @@ import com.likelion.team4.global.exception.CustomException;
 import com.likelion.team4.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
@@ -49,9 +50,7 @@ public class ChatService {
     private final RoutineRepository routineRepository;
     private final RoutineLogProvisioner routineLogProvisioner;
     private final AiChatProvisioner aiChatProvisioner;
-
-    @Value("${openai.api.key}")
-    private String openaiApiKey;
+    private final WebClient openAiWebClient;
 
     // 1. 대화 시작 (routineId 기준 - 오늘자 RoutineLog가 없으면 이 시점에 생성)
     @Transactional
@@ -79,7 +78,7 @@ public class ChatService {
 
         AiChatMessage firstMessage = AiChatMessage.builder()
                 .aiChat(newChat)
-                .role("AI")
+                .role(MessageRole.AI)
                 .content("안녕하세요! 무엇을 도와드릴까요?")
                 .causeTag(null)
                 .build();
@@ -127,7 +126,7 @@ public class ChatService {
 
         AiChatMessage message = AiChatMessage.builder()
                 .aiChat(chat)
-                .role("USER")
+                .role(MessageRole.USER)
                 .content(request.getContent())
                 .causeTag(request.getCauseTag())
                 .build();
@@ -144,7 +143,7 @@ public class ChatService {
 
         // 이전 PENDING 미션 REJECTED 처리
         Optional<AlternativeMission> pendingMission = alternativeMissionRepository
-                .findByAiChatIdAndStatus(chatId, "PENDING");
+                .findByAiChatIdAndStatus(chatId, MissionStatus.PENDING);
 
         MissionResponse previousMission = null;
         if (pendingMission.isPresent()) {
@@ -156,7 +155,7 @@ public class ChatService {
         List<AiChatMessage> messages = aiChatMessageRepository
                 .findByAiChatIdOrderByCreatedAtAsc(chatId);
         String causeTag = messages.stream()
-                .filter(m -> m.getRole().equals("USER"))
+                .filter(m -> m.getRole() == MessageRole.USER)
                 .map(AiChatMessage::getCauseTag)
                 .findFirst()
                 .orElse("기타");
@@ -182,7 +181,7 @@ public class ChatService {
         AlternativeMission mission = alternativeMissionRepository.findById(missionId)
                 .orElseThrow(() -> new CustomException(ErrorCode.RESOURCE_NOT_FOUND));
 
-        if (!mission.getStatus().equals("PENDING")) {
+        if (mission.getStatus() != MissionStatus.PENDING) {
             throw new CustomException(ErrorCode.ALREADY_PROCESSED_MISSION);
         }
 
@@ -198,7 +197,7 @@ public class ChatService {
             throw new CustomException(ErrorCode.INVALID_INPUT);
         }
 
-        return new MissionActionResponse(missionId, mission.getStatus(), routineLogStatus);
+        return new MissionActionResponse(missionId, mission.getStatus().name(), routineLogStatus);
     }
 
     //5.대체미션 클리어
@@ -223,12 +222,6 @@ public class ChatService {
 
     // GPT API 호출
     private Map<String, Object> callGptApi(String causeTag) {
-        WebClient webClient = WebClient.builder()
-                .baseUrl("https://api.openai.com")
-                .defaultHeader("Authorization", "Bearer " + openaiApiKey)
-                .defaultHeader("Content-Type", "application/json")
-                .build();
-
         String prompt = String.format(
                 "사용자가 루틴을 못 지킨 이유: %s\n" +
                         "이 상황에 맞는 짧고 실천 가능한 대체 미션을 제안해주세요.\n" +
@@ -244,7 +237,7 @@ public class ChatService {
         );
 
         try {
-            Map response = webClient.post()
+            Map response = openAiWebClient.post()
                     .uri("/v1/chat/completions")
                     .contentType(MediaType.APPLICATION_JSON)
                     .bodyValue(requestBody)

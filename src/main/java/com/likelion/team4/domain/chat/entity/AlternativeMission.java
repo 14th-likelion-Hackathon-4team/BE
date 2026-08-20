@@ -1,5 +1,6 @@
 package com.likelion.team4.domain.chat.entity;
 
+import com.likelion.team4.domain.chat.entity.enums.MissionStatus;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -31,8 +32,9 @@ public class AlternativeMission {
     @Column(length = 10)
     private String difficulty;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
-    private String status;
+    private MissionStatus status;
 
     @Column(nullable = false)
     private LocalDateTime createdAt;
@@ -56,22 +58,22 @@ public class AlternativeMission {
         this.content = content;
         this.durationMinutes = durationMinutes;
         this.difficulty = difficulty;
-        this.status = "PENDING";
+        this.status = MissionStatus.PENDING;
         this.createdAt = LocalDateTime.now();
         this.missionDate = missionDate;
     }
 
     public void accept() {
-        this.status = "ACCEPTED";
+        this.status = MissionStatus.ACCEPTED;
         this.acceptedAt = LocalDateTime.now();
     }
 
     public void reject() {
-        this.status = "REJECTED";
+        this.status = MissionStatus.REJECTED;
     }
 
     public void complete() {
-        this.status = "COMPLETED";
+        this.status = MissionStatus.COMPLETED;
         this.completedAt = LocalDateTime.now();
     }
 }

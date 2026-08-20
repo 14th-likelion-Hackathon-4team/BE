@@ -1,5 +1,6 @@
 package com.likelion.team4.domain.report.service;
 
+import com.likelion.team4.domain.chat.entity.enums.MissionStatus;
 import com.likelion.team4.domain.chat.repository.AlternativeMissionRepository;
 import com.likelion.team4.domain.report.dto.response.*;
 import com.likelion.team4.domain.routine.entity.Routine;
@@ -120,7 +121,7 @@ public class ReportService {
                         .countByAiChat_RoutineLog_Routine_User_IdAndMissionDateAndStatus(
                                 userId,
                                 date,
-                                "COMPLETED"
+                                MissionStatus.COMPLETED
                         );
 
         // 11. 현재 연속 기록
