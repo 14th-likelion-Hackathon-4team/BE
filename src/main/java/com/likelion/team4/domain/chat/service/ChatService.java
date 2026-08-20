@@ -45,6 +45,9 @@ public class ChatService {
 
     private static final ZoneId SEOUL_ZONE = ZoneId.of("Asia/Seoul");
     private static final String INITIAL_ROUTINE_LOG_STATUS = "미완료";
+    private static final int DEFAULT_DURATION_MINUTES = 15;
+    private static final int MIN_DURATION_MINUTES = 5;
+    private static final int MAX_DURATION_MINUTES = 120;
 
     private final AiChatRepository aiChatRepository;
     private final AiChatMessageRepository aiChatMessageRepository;
@@ -269,12 +272,8 @@ public class ChatService {
 
             Map<String, Object> missionData = objectMapper.readValue(text, Map.class);
 
-            // GPT가 프롬프트 지시(5~120분)를 안 지킬 수 있으므로 서버에서 한 번 더 안전하게 clamp
-            Object durationRaw = missionData.get("durationMinutes");
-            if (durationRaw instanceof Number number) {
-                int clamped = Math.max(5, Math.min(120, number.intValue()));
-                missionData.put("durationMinutes", clamped);
-            }
+            // GPT가 프롬프트 지시(5~120분, 숫자 타입)를 안 지킬 수 있으므로 서버에서 한 번 더 안전하게 처리
+            missionData.put("durationMinutes", resolveDurationMinutes(missionData.get("durationMinutes")));
 
             return missionData;
 
@@ -291,5 +290,32 @@ public class ChatService {
             log.error("GPT API 호출 실패 (응답 파싱 등 예상치 못한 오류)", e);
             throw new CustomException(ErrorCode.LLM_TIMEOUT);
         }
+    }
+
+    // GPT가 durationMinutes를 숫자가 아닌 타입(문자열 등)으로 주거나 범위를 벗어나게 줄 수 있으므로
+    // 항상 유효한 Integer(5~120)로 정규화한다. 파싱 자체가 불가능하면 기본값을 사용한다.
+    private int resolveDurationMinutes(Object durationRaw) {
+        Integer parsed = null;
+
+        if (durationRaw instanceof Number number) {
+            parsed = number.intValue();
+        } else if (durationRaw instanceof String text) {
+            String digitsOnly = text.replaceAll("[^0-9]", "");
+            if (!digitsOnly.isEmpty()) {
+                try {
+                    parsed = Integer.parseInt(digitsOnly);
+                } catch (NumberFormatException ignored) {
+                    // 아래에서 기본값 처리
+                }
+            }
+        }
+
+        if (parsed == null) {
+            log.warn("GPT 응답의 durationMinutes를 파싱할 수 없어 기본값({}) 사용: raw={}",
+                    DEFAULT_DURATION_MINUTES, durationRaw);
+            return DEFAULT_DURATION_MINUTES;
+        }
+
+        return Math.max(MIN_DURATION_MINUTES, Math.min(MAX_DURATION_MINUTES, parsed));
     }
 }
