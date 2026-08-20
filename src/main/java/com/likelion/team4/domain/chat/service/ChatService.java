@@ -10,18 +10,23 @@ import com.likelion.team4.domain.chat.repository.AiChatMessageRepository;
 import com.likelion.team4.domain.chat.repository.AiChatRepository;
 import com.likelion.team4.domain.chat.repository.AlternativeMissionRepository;
 import com.likelion.team4.domain.routine.dto.response.AlternativeMissionCompleteResponse;
+import com.likelion.team4.domain.routine.entity.Routine;
+import com.likelion.team4.domain.routine.repository.RoutineRepository;
 import com.likelion.team4.domain.routinelog.entity.RoutineLog;
-import com.likelion.team4.domain.routinelog.repository.RoutineLogRepository;
+import com.likelion.team4.domain.routinelog.service.RoutineLogProvisioner;
 import com.likelion.team4.global.exception.CustomException;
 import com.likelion.team4.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -31,37 +36,42 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ChatService {
 
+    private static final ZoneId SEOUL_ZONE = ZoneId.of("Asia/Seoul");
+    private static final String INITIAL_ROUTINE_LOG_STATUS = "미완료";
+
     private final AiChatRepository aiChatRepository;
     private final AiChatMessageRepository aiChatMessageRepository;
     private final AlternativeMissionRepository alternativeMissionRepository;
-    private final RoutineLogRepository routineLogRepository;
+    private final RoutineRepository routineRepository;
+    private final RoutineLogProvisioner routineLogProvisioner;
+    private final AiChatProvisioner aiChatProvisioner;
 
     @Value("${openai.api.key}")
     private String openaiApiKey;
 
-    // 1. 대화 시작
+    // 1. 대화 시작 (routineId 기준 - 오늘자 RoutineLog가 없으면 이 시점에 생성)
     @Transactional
-    public ChatStartResponse startChat(Long routineLogId) {
-        RoutineLog routineLog = routineLogRepository.findById(routineLogId)
+    public ChatStartResponse startChat(Long routineId) {
+        Routine routine = routineRepository.findById(routineId)
                 .orElseThrow(() -> new CustomException(ErrorCode.RESOURCE_NOT_FOUND));
 
-        Optional<AiChat> existingChat = aiChatRepository
-                .findTopByRoutineLogIdOrderByCreatedAtDesc(routineLogId);
+        RoutineLog routineLog = getOrCreateTodayRoutineLog(routine);
+        Long routineLogId = routineLog.getId();
+
+        Optional<AiChat> existingChat = aiChatProvisioner.findExisting(routineLogId);
 
         if (existingChat.isPresent()) {
-            AiChat chat = existingChat.get();
-            List<AiChatMessage> messages = aiChatMessageRepository
-                    .findByAiChatIdOrderByCreatedAtAsc(chat.getId());
-            List<ChatMessageResponse> messageResponses = messages.stream()
-                    .map(ChatMessageResponse::new)
-                    .collect(Collectors.toList());
-            return new ChatStartResponse(chat.getId(), routineLogId, false, messageResponses);
+            return buildContinuedChatResponse(existingChat.get(), routineLogId);
         }
 
-        AiChat newChat = AiChat.builder()
-                .routineLog(routineLog)
-                .build();
-        aiChatRepository.save(newChat);
+        AiChat newChat;
+        try {
+            newChat = aiChatProvisioner.create(routineLog);
+        } catch (DataIntegrityViolationException e) {
+            // 동시 요청으로 다른 트랜잭션이 먼저 대화를 시작한 경우 - 그 대화를 이어감
+            AiChat chat = aiChatProvisioner.findExisting(routineLogId).orElseThrow(() -> e);
+            return buildContinuedChatResponse(chat, routineLogId);
+        }
 
         AiChatMessage firstMessage = AiChatMessage.builder()
                 .aiChat(newChat)
@@ -77,6 +87,32 @@ public class ChatService {
                 true,
                 List.of(new ChatMessageResponse(firstMessage))
         );
+    }
+
+    private ChatStartResponse buildContinuedChatResponse(AiChat chat, Long routineLogId) {
+        List<AiChatMessage> messages = aiChatMessageRepository
+                .findByAiChatIdOrderByCreatedAtAsc(chat.getId());
+        List<ChatMessageResponse> messageResponses = messages.stream()
+                .map(ChatMessageResponse::new)
+                .collect(Collectors.toList());
+        return new ChatStartResponse(chat.getId(), routineLogId, false, messageResponses);
+    }
+
+    private RoutineLog getOrCreateTodayRoutineLog(Routine routine) {
+        LocalDate today = LocalDate.now(SEOUL_ZONE);
+
+        Optional<RoutineLog> existing = routineLogProvisioner.find(routine.getId(), today);
+        if (existing.isPresent()) {
+            return existing.get();
+        }
+
+        try {
+            return routineLogProvisioner.create(routine, today);
+        } catch (DataIntegrityViolationException e) {
+            // 동시 요청으로 다른 트랜잭션이 먼저 생성한 경우 - 별도 트랜잭션으로 재조회
+            return routineLogProvisioner.find(routine.getId(), today)
+                    .orElseThrow(() -> e);
+        }
     }
 
     // 2. 원인 답변 전송
