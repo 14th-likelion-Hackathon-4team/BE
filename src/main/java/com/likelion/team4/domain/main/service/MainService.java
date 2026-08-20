@@ -119,7 +119,7 @@ public class MainService {
                             )
                             .alternativeMissionStatus(
                                     alternativeMission != null
-                                            ? alternativeMission.getStatus()
+                                            ? alternativeMission.getStatus().name()
                                             : null
                             )
                             .alternativeMissionCompleted(
@@ -228,9 +228,9 @@ public class MainService {
         }
 
         return switch (alternativeMission.getStatus()) {
-            case "COMPLETED" -> "ALTERNATIVE_COMPLETED";
-            case "REJECTED" -> "ALTERNATIVE_REJECTED";
-            case "ACCEPTED", "PENDING" -> "ALTERNATIVE_IN_PROGRESS";
+            case COMPLETED -> "ALTERNATIVE_COMPLETED";
+            case REJECTED -> "ALTERNATIVE_REJECTED";
+            case ACCEPTED, PENDING -> "ALTERNATIVE_IN_PROGRESS";
             default -> "PENDING";
         };
     }
