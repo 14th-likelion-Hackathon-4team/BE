@@ -72,16 +72,8 @@ public class MainService {
                                             )
                                     );
 
-                    RoutineLog routineLog = routineLogRepository
-                            .findByRoutine_IdAndLogDate(
-                                    routine.getId(),
-                                    todayDate
-                            )
-                            .orElseThrow(null);
-
                     return TodayRoutineResponse.builder()
                             .routineId(routine.getId())
-                            .routineLogId((routineLog != null ? routineLog.getId() : null))
                             .routineName(routine.getTitle())
                             .scheduledTime(routine.getPerformTime())
                             .completed(routineRecord.isCompleted())
