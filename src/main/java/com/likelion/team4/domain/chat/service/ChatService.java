@@ -51,6 +51,7 @@ public class ChatService {
     private final RoutineRepository routineRepository;
     private final RoutineLogProvisioner routineLogProvisioner;
     private final AiChatProvisioner aiChatProvisioner;
+    private final MissionGenerationHelper missionGenerationHelper;
     private final WebClient openAiWebClient;
 
     // 1. 대화 시작 (routineId 기준 - 오늘자 RoutineLog가 없으면 이 시점에 생성)
@@ -137,40 +138,21 @@ public class ChatService {
     }
 
     // 3. 대체 미션 생성 (GPT API 호출)
-    @Transactional
+    // 트랜잭션은 DB 준비 단계(prepare)와 저장 단계(saveMission)에만 짧게 걸림.
+    // GPT 호출(최대 10초 블로킹) 동안은 DB 커넥션을 붙잡지 않음.
     public MissionGenerateResponse generateMission(Long chatId) {
-        AiChat chat = aiChatRepository.findById(chatId)
-                .orElseThrow(() -> new CustomException(ErrorCode.RESOURCE_NOT_FOUND));
+        PreparedMissionContext context = missionGenerationHelper.prepare(chatId);
 
-        // 이전 PENDING 미션 REJECTED 처리
-        Optional<AlternativeMission> pendingMission = alternativeMissionRepository
-                .findByAiChatIdAndStatus(chatId, MissionStatus.PENDING);
+        Map<String, Object> missionData = callGptApi(context.causeTag());
 
-        MissionResponse previousMission = null;
-        if (pendingMission.isPresent()) {
-            pendingMission.get().reject();
-            previousMission = new MissionResponse(pendingMission.get());
-        }
+        AlternativeMission newMission = missionGenerationHelper.saveMission(
+                chatId, missionData, context.missionDate()
+        );
 
-        // 대화에서 원인 태그 가져오기 (첫 USER 메시지 1건만 조회)
-        String causeTag = aiChatMessageRepository
-                .findFirstByAiChatIdAndRoleOrderByCreatedAtAsc(chatId, MessageRole.USER)
-                .map(AiChatMessage::getCauseTag)
-                .orElse("기타");
-
-        // GPT API 호출
-        Map<String, Object> missionData = callGptApi(causeTag);
-
-        AlternativeMission newMission = AlternativeMission.builder()
-                .aiChat(chat)
-                .content((String) missionData.get("content"))
-                .durationMinutes((Integer) missionData.get("durationMinutes"))
-                .difficulty((String) missionData.get("difficulty"))
-                .missionDate(chat.getRoutineLog().getLogDate())
-                .build();
-        alternativeMissionRepository.save(newMission);
-
-        return new MissionGenerateResponse(new MissionResponse(newMission), previousMission);
+        return new MissionGenerateResponse(
+                new MissionResponse(newMission),
+                context.previousMission()
+        );
     }
 
     // 4. 대체 미션 수락/거절
