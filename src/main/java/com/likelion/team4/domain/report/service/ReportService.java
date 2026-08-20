@@ -5,6 +5,7 @@ import com.likelion.team4.domain.chat.repository.AlternativeMissionRepository;
 import com.likelion.team4.domain.report.dto.response.*;
 import com.likelion.team4.domain.routine.entity.Routine;
 import com.likelion.team4.domain.routine.entity.RoutineRecord;
+import com.likelion.team4.domain.routine.entity.enums.RoutineRecordStatus;
 import com.likelion.team4.domain.routine.repository.RoutineRecordRepository;
 import com.likelion.team4.domain.routine.repository.RoutineRepository;
 import com.likelion.team4.domain.user.entity.User;
@@ -78,7 +79,7 @@ public class ReportService {
                         .collect(
                                 java.util.stream.Collectors.toMap(
                                         record -> record.getRoutine().getId(),
-                                        RoutineRecord::isCompleted
+                                        record -> record.getStatus() == RoutineRecordStatus.COMPLETED
                                 )
                         );
 
@@ -192,7 +193,7 @@ public class ReportService {
                 new HashMap<>();
 
         for (RoutineRecord record : records) {
-            if (!record.isCompleted()) {
+            if (record.getStatus() != RoutineRecordStatus.COMPLETED) {
                 continue;
             }
 

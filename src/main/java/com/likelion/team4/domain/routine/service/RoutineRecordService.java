@@ -4,6 +4,7 @@ import com.likelion.team4.domain.report.service.StreakService;
 import com.likelion.team4.domain.routine.dto.response.RoutineCompleteResponse;
 import com.likelion.team4.domain.routine.entity.Routine;
 import com.likelion.team4.domain.routine.entity.RoutineRecord;
+import com.likelion.team4.domain.routine.entity.enums.RoutineRecordStatus;
 import com.likelion.team4.domain.routine.repository.RoutineRecordRepository;
 import com.likelion.team4.domain.routine.repository.RoutineRepository;
 import com.likelion.team4.global.exception.CustomException;
@@ -39,7 +40,7 @@ public class RoutineRecordService {
                 .orElseGet(() -> RoutineRecord.builder()
                         .routine(routine)
                         .recordDate(today)
-                        .completed(false)
+                        .status(RoutineRecordStatus.PENDING)
                         .build());
 
         record.complete();
@@ -55,7 +56,7 @@ public class RoutineRecordService {
 
         return RoutineCompleteResponse.builder()
                 .routineId(routineId)
-                .completed(record.isCompleted())
+                .completed(record.getStatus() == RoutineRecordStatus.COMPLETED)
                 .completedAt(completedAt)
                 .build();
     }

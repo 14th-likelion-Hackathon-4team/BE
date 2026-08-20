@@ -3,6 +3,7 @@ package com.likelion.team4.domain.report.service;
 import com.likelion.team4.domain.report.dto.response.StreakResponse;
 import com.likelion.team4.domain.routine.entity.Routine;
 import com.likelion.team4.domain.routine.entity.RoutineRecord;
+import com.likelion.team4.domain.routine.entity.enums.RoutineRecordStatus;
 import com.likelion.team4.domain.routine.repository.RoutineRecordRepository;
 import com.likelion.team4.domain.user.entity.User;
 import com.likelion.team4.domain.user.repository.UserRepository;
@@ -47,7 +48,7 @@ public class StreakService {
                                 completedDate
                         )
                         .stream()
-                        .filter(RoutineRecord::isCompleted)
+                        .filter(record -> record.getStatus() == RoutineRecordStatus.COMPLETED)
                         .toList();
 
         RoutineRecord completedRecord =
@@ -152,7 +153,7 @@ public class StreakService {
                         date
                 )
                 .stream()
-                .filter(RoutineRecord::isCompleted)
+                .filter(record -> record.getStatus() == RoutineRecordStatus.COMPLETED)
                 .toList();
     }
 

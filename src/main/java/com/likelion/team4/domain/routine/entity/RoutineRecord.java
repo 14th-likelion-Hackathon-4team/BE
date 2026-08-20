@@ -1,5 +1,6 @@
 package com.likelion.team4.domain.routine.entity;
 
+import com.likelion.team4.domain.routine.entity.enums.RoutineRecordStatus;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -23,10 +24,15 @@ public class RoutineRecord {
     @Column(name = "record_date", nullable = false)
     private LocalDate recordDate;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private boolean completed;
+    private RoutineRecordStatus status;
 
     public void complete() {
-        this.completed = true;
+        this.status = RoutineRecordStatus.COMPLETED;
+    }
+
+    public void markIncomplete() {
+        this.status = RoutineRecordStatus.INCOMPLETE;
     }
 }
