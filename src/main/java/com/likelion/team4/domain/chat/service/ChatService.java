@@ -17,12 +17,15 @@ import com.likelion.team4.domain.routinelog.service.RoutineLogProvisioner;
 import com.likelion.team4.global.exception.CustomException;
 import com.likelion.team4.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientRequestException;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -34,6 +37,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class ChatService {
 
     private static final ZoneId SEOUL_ZONE = ZoneId.of("Asia/Seoul");
@@ -259,7 +263,17 @@ public class ChatService {
                     new com.fasterxml.jackson.databind.ObjectMapper();
             return mapper.readValue(text, Map.class);
 
+        } catch (WebClientResponseException e) {
+            log.error(
+                    "GPT API 호출 실패 (OpenAI 응답 오류) status={}, body={}",
+                    e.getStatusCode(), e.getResponseBodyAsString(), e
+            );
+            throw new CustomException(ErrorCode.LLM_TIMEOUT);
+        } catch (WebClientRequestException e) {
+            log.error("GPT API 호출 실패 (네트워크/연결 오류)", e);
+            throw new CustomException(ErrorCode.LLM_TIMEOUT);
         } catch (Exception e) {
+            log.error("GPT API 호출 실패 (응답 파싱 등 예상치 못한 오류)", e);
             throw new CustomException(ErrorCode.LLM_TIMEOUT);
         }
     }
