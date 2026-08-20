@@ -4,7 +4,6 @@ import com.likelion.team4.domain.chat.repository.AiChatMessageRepository;
 import com.likelion.team4.domain.chat.repository.AiChatRepository;
 import com.likelion.team4.domain.chat.repository.AlternativeMissionRepository;
 import com.likelion.team4.domain.main.repository.NotificationRepository;
-import com.likelion.team4.domain.routine.repository.RoutineAlternativeMissionRepository;
 import com.likelion.team4.domain.routine.repository.RoutineRecordRepository;
 import com.likelion.team4.domain.routine.repository.RoutineRepository;
 import com.likelion.team4.domain.routinelog.repository.RoutineLogRepository;
@@ -45,7 +44,6 @@ class MypageServiceTest {
     @Mock private AiChatRepository aiChatRepository;
     @Mock private RoutineLogRepository routineLogRepository;
     @Mock private RoutineRecordRepository routineRecordRepository;
-    @Mock private RoutineAlternativeMissionRepository routineAlternativeMissionRepository;
     @Mock private RoutineRepository routineRepository;
     @Mock private NotificationRepository notificationRepository;
 
@@ -203,7 +201,6 @@ class MypageServiceTest {
         verify(aiChatRepository).deleteAllByRoutineLog_Routine_User_Id(userId);
         verify(routineLogRepository).deleteAllByRoutine_User_Id(userId);
         verify(routineRecordRepository).deleteAllByRoutine_User_Id(userId);
-        verify(routineAlternativeMissionRepository).deleteAllByRoutine_User_Id(userId);
         verify(routineRepository).deleteAllByUser_Id(userId);
         verify(notificationRepository).deleteAllByUser_Id(userId);
         verify(userRepository).delete(user);
