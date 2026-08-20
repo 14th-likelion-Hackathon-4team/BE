@@ -26,8 +26,9 @@ public class MissionResponse {
         if (minutes == null) {
             return null;
         }
-        int hours = minutes / 60;
-        int remaining = minutes % 60;
+        int safeMinutes = Math.max(0, minutes);
+        int hours = safeMinutes / 60;
+        int remaining = safeMinutes % 60;
         if (hours == 0) {
             return remaining + "분";
         }
