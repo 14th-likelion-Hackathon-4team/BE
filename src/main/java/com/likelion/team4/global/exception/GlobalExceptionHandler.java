@@ -1,6 +1,7 @@
 package com.likelion.team4.global.exception;
 
 import com.likelion.team4.global.response.ApiResponse;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -10,12 +11,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(CustomException.class)
     public ResponseEntity<ApiResponse<?>> handleCustomException(CustomException e) {
         ErrorCode errorCode = e.getErrorCode();
+        log.warn("CustomException 발생: {} - {}", errorCode.getCode(), errorCode.getMessage());
         ApiResponse<?> response = ApiResponse.error(errorCode.getCode(), errorCode.getMessage(), null);
         return ResponseEntity.status(errorCode.getStatus()).body(response);
     }
@@ -39,6 +42,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<?>> handleException(Exception e) {
+        log.error("처리되지 않은 예외 발생", e);
         ApiResponse<?> response = ApiResponse.error(
                 ErrorCode.INTERNAL_SERVER_ERROR.getCode(),
                 ErrorCode.INTERNAL_SERVER_ERROR.getMessage(),

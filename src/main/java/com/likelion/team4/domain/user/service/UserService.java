@@ -10,6 +10,7 @@ import com.likelion.team4.global.exception.CustomException;
 import com.likelion.team4.global.exception.ErrorCode;
 import com.likelion.team4.global.jwt.JwtUtil;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -48,7 +49,13 @@ public class UserService {
                 .updatedAt(LocalDateTime.now())
                 .build();
 
-        User savedUser = userRepository.save(user);
+        User savedUser;
+        try {
+            savedUser = userRepository.save(user);
+        } catch (DataIntegrityViolationException e) {
+            // 동시 요청으로 existsByLoginId 체크를 둘 다 통과한 경우, DB 유니크 제약에서 최종 차단됨
+            throw new CustomException(ErrorCode.DUPLICATE_LOGIN_ID);
+        }
         return new SignupResponse(savedUser);
     }
 
