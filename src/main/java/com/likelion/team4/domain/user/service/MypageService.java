@@ -4,7 +4,6 @@ import com.likelion.team4.domain.chat.repository.AiChatMessageRepository;
 import com.likelion.team4.domain.chat.repository.AiChatRepository;
 import com.likelion.team4.domain.chat.repository.AlternativeMissionRepository;
 import com.likelion.team4.domain.main.repository.NotificationRepository;
-import com.likelion.team4.domain.routine.repository.RoutineAlternativeMissionRepository;
 import com.likelion.team4.domain.routine.repository.RoutineRecordRepository;
 import com.likelion.team4.domain.routine.repository.RoutineRepository;
 import com.likelion.team4.domain.routinelog.repository.RoutineLogRepository;
@@ -35,7 +34,6 @@ public class MypageService {
     private final AiChatRepository aiChatRepository;
     private final RoutineLogRepository routineLogRepository;
     private final RoutineRecordRepository routineRecordRepository;
-    private final RoutineAlternativeMissionRepository routineAlternativeMissionRepository;
     private final RoutineRepository routineRepository;
     private final NotificationRepository notificationRepository;
 
@@ -138,7 +136,6 @@ public class MypageService {
         // Routine 도메인 자식 엔티티 일괄 삭제
         routineLogRepository.deleteAllByRoutine_User_Id(userId);
         routineRecordRepository.deleteAllByRoutine_User_Id(userId);
-        routineAlternativeMissionRepository.deleteAllByRoutine_User_Id(userId);
         routineRepository.deleteAllByUser_Id(userId);
     }
 
