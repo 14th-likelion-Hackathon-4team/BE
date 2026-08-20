@@ -1,6 +1,7 @@
 package com.likelion.team4.domain.routine.repository;
 
 import com.likelion.team4.domain.routine.entity.RoutineRecord;
+import com.likelion.team4.domain.routine.entity.enums.RoutineRecordStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.time.LocalDate;
@@ -40,6 +41,11 @@ public interface RoutineRecordRepository
     List<RoutineRecord> findAllByRoutine_IdAndRecordDateLessThanEqualOrderByRecordDateDesc(
             Long routineId,
             LocalDate date
+    );
+
+    List<RoutineRecord> findAllByRecordDateAndStatus(
+            LocalDate recordDate,
+            RoutineRecordStatus status
     );
 
     void deleteAllByRoutine_User_Id(Long userId);

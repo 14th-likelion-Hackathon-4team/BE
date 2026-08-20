@@ -3,6 +3,7 @@ package com.likelion.team4.domain.main.service;
 import com.likelion.team4.domain.main.dto.*;
 import com.likelion.team4.domain.routine.entity.Routine;
 import com.likelion.team4.domain.routine.entity.RoutineRecord;
+import com.likelion.team4.domain.routine.entity.enums.RoutineRecordStatus;
 import com.likelion.team4.domain.routine.repository.RoutineRecordRepository;
 import com.likelion.team4.domain.routine.repository.RoutineRepository;
 import com.likelion.team4.domain.main.entity.Notification;
@@ -67,7 +68,7 @@ public class MainService {
                                                     RoutineRecord.builder()
                                                             .routine(routine)
                                                             .recordDate(todayDate)
-                                                            .completed(false)
+                                                            .status(RoutineRecordStatus.PENDING)
                                                             .build()
                                             )
                                     );
@@ -76,7 +77,7 @@ public class MainService {
                             .routineId(routine.getId())
                             .routineName(routine.getTitle())
                             .scheduledTime(routine.getPerformTime())
-                            .completed(routineRecord.isCompleted())
+                            .completed(routineRecord.getStatus() == RoutineRecordStatus.COMPLETED)
                             .build();
                 })
                 .toList();
