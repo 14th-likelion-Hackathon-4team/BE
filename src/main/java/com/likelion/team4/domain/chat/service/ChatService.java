@@ -1,5 +1,6 @@
 package com.likelion.team4.domain.chat.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.likelion.team4.domain.chat.dto.request.ChatMessageRequest;
 import com.likelion.team4.domain.chat.dto.request.MissionActionRequest;
 import com.likelion.team4.domain.chat.dto.response.*;
@@ -53,6 +54,7 @@ public class ChatService {
     private final AiChatProvisioner aiChatProvisioner;
     private final MissionGenerationHelper missionGenerationHelper;
     private final WebClient openAiWebClient;
+    private final ObjectMapper objectMapper;
 
     // 1. 대화 시작 (routineId 기준 - 오늘자 RoutineLog가 없으면 이 시점에 생성)
     @Transactional
@@ -265,9 +267,7 @@ public class ChatService {
             // JSON 코드블록 제거 후 파싱
             text = text.replaceAll("```json", "").replaceAll("```", "").trim();
 
-            com.fasterxml.jackson.databind.ObjectMapper mapper =
-                    new com.fasterxml.jackson.databind.ObjectMapper();
-            Map<String, Object> missionData = mapper.readValue(text, Map.class);
+            Map<String, Object> missionData = objectMapper.readValue(text, Map.class);
 
             // GPT가 프롬프트 지시(5~120분)를 안 지킬 수 있으므로 서버에서 한 번 더 안전하게 clamp
             Object durationRaw = missionData.get("durationMinutes");
