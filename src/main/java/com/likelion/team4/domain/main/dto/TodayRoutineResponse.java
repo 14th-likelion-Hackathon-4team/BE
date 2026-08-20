@@ -13,8 +13,6 @@ public class TodayRoutineResponse {
 
     private Long routineId;
 
-    private Long routineLogId;
-
     private String routineName;
 
     private LocalTime scheduledTime;

@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -23,29 +24,33 @@ import java.util.stream.Collectors;
 @Slf4j
 public class RoutineAlarmScheduler {
 
+    private static final ZoneId SEOUL_ZONE = ZoneId.of("Asia/Seoul");
+
     private final RoutineRepository routineRepository;
     private final NotificationService notificationService;
     private final NotificationRepository notificationRepository;
     private final NotificationAiService notificationAiService;
 
+    // 최초 알림 생성
+    // 테스트를 위해 현재는 매분 실행
     @Scheduled(cron = "0 * * * * *", zone = "Asia/Seoul")
+    @Transactional
     public void createRoutineNotifications() {
 
-        // 한국 시간 기준
-        ZoneId zone = ZoneId.of("Asia/Seoul");
+        LocalDate today = LocalDate.now(SEOUL_ZONE);
 
-        LocalDate today = LocalDate.now(zone);
-        LocalTime now = LocalTime.now(zone)
+        LocalTime now = LocalTime.now(SEOUL_ZONE)
                 .withSecond(0)
                 .withNano(0);
 
         log.info(
-                "=== 알림 스케줄러 실행 === today={}, now={}",
+                "=== 최초 알림 스케줄러 실행 === today={}, now={}",
                 today,
                 now
         );
 
-        String todayDay = DayOfWeekUtil.toDayCode(today.getDayOfWeek());
+        String todayDay =
+                DayOfWeekUtil.toDayCode(today.getDayOfWeek());
 
         List<Routine> routines =
                 routineRepository.findTargetRoutines(
@@ -59,11 +64,7 @@ public class RoutineAlarmScheduler {
                 routines.size()
         );
 
-        List<Long> routineIds = routines.stream()
-                .map(Routine::getId)
-                .toList();
-
-        if (routineIds.isEmpty()) {
+        if (routines.isEmpty()) {
             log.info("=== 알림 대상 루틴 없음 ===");
             return;
         }
@@ -71,6 +72,11 @@ public class RoutineAlarmScheduler {
         LocalDateTime start = today.atStartOfDay();
         LocalDateTime end = today.plusDays(1).atStartOfDay();
 
+        List<Long> routineIds = routines.stream()
+                .map(Routine::getId)
+                .toList();
+
+        // 오늘 이미 생성된 알림 확인
         List<Notification> todayNotifications =
                 notificationRepository
                         .findByRoutine_IdInAndCreatedAtBetween(
@@ -79,9 +85,12 @@ public class RoutineAlarmScheduler {
                                 end
                         );
 
-        Set<Long> notifiedRoutineIds = todayNotifications.stream()
-                .map(notification -> notification.getRoutine().getId())
-                .collect(Collectors.toSet());
+        Set<Long> notifiedRoutineIds =
+                todayNotifications.stream()
+                        .map(notification ->
+                                notification.getRoutine().getId()
+                        )
+                        .collect(Collectors.toSet());
 
         for (Routine routine : routines) {
 
@@ -95,21 +104,20 @@ public class RoutineAlarmScheduler {
                     routine.getRepeatDays()
             );
 
-            // 오늘 이미 생성된 알림인지 확인
+            // 오늘 이미 최초 알림이 생성된 경우
+            // 재알림은 별도 스케줄러에서 처리
             if (notifiedRoutineIds.contains(routine.getId())) {
                 log.info(
-                        "루틴 제외 - 오늘 이미 알림 생성됨: routineId={}",
+                        "루틴 제외 - 오늘 이미 최초 알림 생성됨: routineId={}",
                         routine.getId()
                 );
                 continue;
             }
 
-            // AI를 이용해 알림 문구 생성
             String content =
                     notificationAiService
                             .generateNotification(routine);
 
-            // 알림 DB 저장
             notificationService.createNotification(
                     routine.getUser(),
                     routine,
@@ -117,7 +125,7 @@ public class RoutineAlarmScheduler {
             );
 
             log.info(
-                    "========== 루틴 알림 생성 완료 ==========" +
+                    "========== 최초 알림 생성 완료 ==========" +
                             " routineId={}, userId={}, alarmTime={}, content={}",
                     routine.getId(),
                     routine.getUser().getId(),

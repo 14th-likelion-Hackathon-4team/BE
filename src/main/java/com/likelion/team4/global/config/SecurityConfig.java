@@ -38,17 +38,7 @@ public class SecurityConfig {
                                 "/api/v1/routinefit/auth/login",
                                 "/api/v1/routinefit/auth/reissue",
                                 "/swagger-ui/**",
-                                "/v3/api-docs/**",
-                                "/api/v1/routinefit/main/**",
-                                "/api/v1/routinefit/main/notifications/today",
-                                "/api/v1/routinefit/routines/*/complete",
-                                "/api/v1/routinefit/notifications/*/read",
-                                "/api/v1/routinefit/missions/*/complete",
-                                "/api/v1/routinefit/routine-logs/*/chats",
-                                "/api/v1/routinefit/chats/*/missions",
-                                "/api/v1/routinefit/missions/*/complete",
-                                "/api/v1/routinefit/missions/*",
-                                "/api/v1/routinefit/reports/**"
+                                "/v3/api-docs/**"
                         ).permitAll()
                         // 나머지는 인증 필요
                         .anyRequest().authenticated()
@@ -64,7 +54,8 @@ public class SecurityConfig {
         // 프론트엔드가 접속하는 출처(Origin) 허용
         configuration.setAllowedOrigins(List.of(
                 "http://localhost:5173",
-                "http://54.117.20.73:8080"
+                "http://54.117.20.73:8080",
+                "https://fe-1tsx.vercel.app"
         ));
 
         // 허용할 HTTP 메서드 (OPTIONS 필수)
