@@ -91,7 +91,7 @@ public class MainService {
 
                     String routineStatus =
                             determineRoutineStatus(
-                                    routineCompleted,
+                                    routineRecord.getStatus(),
                                     alternativeMission
                             );
 
@@ -211,23 +211,27 @@ public class MainService {
     }
 
     private String determineRoutineStatus(
-            boolean routineCompleted,
+            RoutineRecordStatus recordStatus,
             AlternativeMission alternativeMission
     ) {
 
-        if (routineCompleted) {
+        if (recordStatus == RoutineRecordStatus.COMPLETED) {
             return "COMPLETED";
         }
 
+        if (recordStatus == RoutineRecordStatus.INCOMPLETE) {
+            return "INCOMPLETE";
+        }
+
         if (alternativeMission == null) {
-            return "WAITING";
+            return "PENDING";
         }
 
         return switch (alternativeMission.getStatus()) {
             case "COMPLETED" -> "ALTERNATIVE_COMPLETED";
             case "REJECTED" -> "ALTERNATIVE_REJECTED";
             case "ACCEPTED", "PENDING" -> "ALTERNATIVE_IN_PROGRESS";
-            default -> "WAITING";
+            default -> "PENDING";
         };
     }
 }
