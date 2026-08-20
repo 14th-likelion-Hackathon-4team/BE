@@ -10,6 +10,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -22,8 +23,9 @@ public class ChatController {
     // 1. 대화 시작
     @PostMapping("/routines/{routineId}/chats")
     public ResponseEntity<ApiResponse<ChatStartResponse>> startChat(
-            @PathVariable Long routineId) {
-        ChatStartResponse response = chatService.startChat(routineId);
+            @PathVariable Long routineId,
+            @AuthenticationPrincipal Long userId) {
+        ChatStartResponse response = chatService.startChat(routineId, userId);
         boolean isNew = response.isNew();
         if (isNew) {
             return ResponseEntity.status(HttpStatus.CREATED)
@@ -36,8 +38,9 @@ public class ChatController {
     @PostMapping("/chats/{chatId}/messages")
     public ResponseEntity<ApiResponse<ChatMessageResponse>> sendMessage(
             @PathVariable Long chatId,
-            @Valid @RequestBody ChatMessageRequest request) {
-        ChatMessageResponse response = chatService.sendMessage(chatId, request);
+            @Valid @RequestBody ChatMessageRequest request,
+            @AuthenticationPrincipal Long userId) {
+        ChatMessageResponse response = chatService.sendMessage(chatId, request, userId);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("S201", "메시지 전송 성공", response));
     }
@@ -45,8 +48,9 @@ public class ChatController {
     // 3. 대체 미션 생성
     @PostMapping("/chats/{chatId}/missions")
     public ResponseEntity<ApiResponse<MissionGenerateResponse>> generateMission(
-            @PathVariable Long chatId) {
-        MissionGenerateResponse response = chatService.generateMission(chatId);
+            @PathVariable Long chatId,
+            @AuthenticationPrincipal Long userId) {
+        MissionGenerateResponse response = chatService.generateMission(chatId, userId);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("S201", "대체 미션 제안 성공", response));
     }
@@ -55,8 +59,9 @@ public class ChatController {
     @PatchMapping("/missions/{missionId}")
     public ResponseEntity<ApiResponse<MissionActionResponse>> handleMissionAction(
             @PathVariable Long missionId,
-            @Valid @RequestBody MissionActionRequest request) {
-        MissionActionResponse response = chatService.handleMissionAction(missionId, request);
+            @Valid @RequestBody MissionActionRequest request,
+            @AuthenticationPrincipal Long userId) {
+        MissionActionResponse response = chatService.handleMissionAction(missionId, request, userId);
         return ResponseEntity.ok(ApiResponse.success("S200",
                 request.getAction().equals("ACCEPT") ? "대체 미션을 수락했습니다" : "대체 미션을 거절했습니다",
                 response));
@@ -65,10 +70,11 @@ public class ChatController {
     // 5. 대체 미션 완료
     @PatchMapping("/missions/{missionId}/complete")
     public ResponseEntity<ApiResponse<AlternativeMissionCompleteResponse>> completeMission(
-            @PathVariable Long missionId) {
+            @PathVariable Long missionId,
+            @AuthenticationPrincipal Long userId) {
 
         AlternativeMissionCompleteResponse response =
-                chatService.completeMission(missionId);
+                chatService.completeMission(missionId, userId);
 
         return ResponseEntity.ok(
                 ApiResponse.success(
