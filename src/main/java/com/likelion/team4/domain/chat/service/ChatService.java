@@ -143,7 +143,9 @@ public class ChatService {
     public MissionGenerateResponse generateMission(Long chatId) {
         PreparedMissionContext context = missionGenerationHelper.prepare(chatId);
 
-        Map<String, Object> missionData = callGptApi(context.causeTag());
+        Map<String, Object> missionData = callGptApi(
+                context.routineTitle(), context.causeTag(), context.userReason()
+        );
 
         MissionSaveResult result = missionGenerationHelper.saveMission(
                 chatId, context.pendingMissionId(), missionData, context.missionDate()
@@ -211,13 +213,27 @@ public class ChatService {
     }
 
     // GPT API 호출
-    private Map<String, Object> callGptApi(String causeTag) {
+    private Map<String, Object> callGptApi(String routineTitle, String causeTag, String userReason) {
+        String reasonText = (userReason == null || userReason.isBlank()) ? "(별도 설명 없음)" : userReason;
+
         String prompt = String.format(
-                "사용자가 루틴을 못 지킨 이유: %s\n" +
-                        "이 상황에 맞는 짧고 실천 가능한 대체 미션을 제안해주세요.\n" +
+                "사용자의 원래 루틴: %s\n" +
+                        "오늘 이 루틴을 못 지킨 이유(분류): %s\n" +
+                        "사용자가 직접 설명한 상황: %s\n\n" +
+                        "위 상황에 맞는 대체 미션을 제안해주세요.\n\n" +
+                        "조건:\n" +
+                        "1. 대체 미션은 '이유'를 없애거나 해결하는 것이 아니라, 원래 루틴(\"%s\")의 목표와 " +
+                        "어느 정도 연결되어야 합니다.\n" +
+                        "2. 너무 쉽게 끝낼 수 있는 수준으로 낮추지 말고, 원래 루틴보다는 부담이 적지만 " +
+                        "의미 있는 수준으로 제안하세요.\n" +
+                        "3. 아래는 스타일 참고용 예시입니다 (그대로 복사하지 말고, 이번 상황에 맞게 새로 생성하세요):\n" +
+                        "   - 오늘 운동하기 / 갑자기 약속이 잡힘 → 단백질 쉐이크 1잔 마시고 약속 장소까지 걸어가기\n" +
+                        "   - 헬스장 가기 / 피로가 너무 심함 → 집에서 가볍게 맨몸운동 하기\n" +
+                        "   - 책 30분 읽기 / 집중이 안 됨 → 책상 정리 10분 하기\n" +
+                        "   - 하루 만보 걷기 / 비가 옴 → 집에서 15분 움직이기\n\n" +
                         "반드시 아래 JSON 형식으로만 응답하세요. 다른 텍스트는 절대 포함하지 마세요:\n" +
                         "{\"content\": \"미션 내용\", \"durationMinutes\": 숫자, \"difficulty\": \"쉬움 또는 보통 또는 어려움\"}",
-                causeTag
+                routineTitle, causeTag, reasonText, routineTitle
         );
 
         Map<String, Object> requestBody = Map.of(
