@@ -10,7 +10,13 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "ai_chat")
+@Table(
+        name = "ai_chat",
+        uniqueConstraints = @UniqueConstraint(
+                name = "uk_ai_chat_routine_log_id",
+                columnNames = {"routine_log_id"}
+        )
+)
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class AiChat {

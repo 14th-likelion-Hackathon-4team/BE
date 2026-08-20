@@ -20,10 +20,10 @@ public class ChatController {
     private final ChatService chatService;
 
     // 1. 대화 시작
-    @PostMapping("/routine-logs/{routineLogId}/chats")
+    @PostMapping("/routines/{routineId}/chats")
     public ResponseEntity<ApiResponse<ChatStartResponse>> startChat(
-            @PathVariable Long routineLogId) {
-        ChatStartResponse response = chatService.startChat(routineLogId);
+            @PathVariable Long routineId) {
+        ChatStartResponse response = chatService.startChat(routineId);
         boolean isNew = response.isNew();
         if (isNew) {
             return ResponseEntity.status(HttpStatus.CREATED)
