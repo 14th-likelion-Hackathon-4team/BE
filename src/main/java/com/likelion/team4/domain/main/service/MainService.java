@@ -77,13 +77,11 @@ public class MainService {
                                     routine.getId(),
                                     todayDate
                             )
-                            .orElseThrow(() ->
-                                    new CustomException(ErrorCode.RESOURCE_NOT_FOUND)
-                            );
+                            .orElseThrow(null);
 
                     return TodayRoutineResponse.builder()
                             .routineId(routine.getId())
-                            .routineLogId(routineLog.getId())
+                            .routineLogId((routineLog != null ? routineLog.getId() : null))
                             .routineName(routine.getTitle())
                             .scheduledTime(routine.getPerformTime())
                             .completed(routineRecord.isCompleted())
