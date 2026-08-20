@@ -53,4 +53,8 @@ public class RoutineLog {
         this.reminderSent = reminderSent;
         this.createdAt = LocalDateTime.now();
     }
+
+    public void updateStatus(String status) {
+        this.status = status;
+    }
 }

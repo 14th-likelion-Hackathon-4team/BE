@@ -194,6 +194,8 @@ public class ChatService {
             throw new CustomException(ErrorCode.INVALID_INPUT);
         }
 
+        mission.getAiChat().getRoutineLog().updateStatus(routineLogStatus);
+
         return new MissionActionResponse(missionId, mission.getStatus().name(), routineLogStatus);
     }
 
