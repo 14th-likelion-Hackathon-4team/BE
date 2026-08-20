@@ -66,4 +66,28 @@ public class RoutineRecordService {
                 .build();
     }
 
+    // 대체미션 완료 시 원래 루틴의 RoutineRecord도 함께 완료 처리 (수행 시간 제약 없음)
+    public void completeRoutineByAlternativeMission(Long routineId, LocalDate date) {
+
+        Routine routine = routineRepository.findById(routineId)
+                .orElseThrow(() -> new CustomException(ErrorCode.ROUTINE_NOT_FOUND));
+
+        RoutineRecord record = routineRecordRepository
+                .findByRoutine_IdAndRecordDate(routineId, date)
+                .orElseGet(() -> RoutineRecord.builder()
+                        .routine(routine)
+                        .recordDate(date)
+                        .status(RoutineRecordStatus.PENDING)
+                        .build());
+
+        if (record.getStatus() == RoutineRecordStatus.COMPLETED) {
+            return;
+        }
+
+        record.complete();
+        routineRecordRepository.save(record);
+
+        streakService.updateStreak(routine.getUser().getId(), routineId, date);
+    }
+
 }

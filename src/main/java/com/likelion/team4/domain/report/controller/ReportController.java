@@ -8,6 +8,7 @@ import com.likelion.team4.domain.report.service.ReportService;
 import com.likelion.team4.global.response.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -22,7 +23,7 @@ public class ReportController {
 
     @GetMapping("/daily")
     public ResponseEntity<ApiResponse<DailyReportResponse>> getDailyReport(
-            @RequestParam Long userId,
+            @AuthenticationPrincipal Long userId,
             @RequestParam LocalDate date
     ) {
 
@@ -40,7 +41,7 @@ public class ReportController {
 
     @GetMapping("/weekly")
     public ResponseEntity<ApiResponse<WeeklyReportResponse>> getWeeklyReport(
-            @RequestParam Long userId,
+            @AuthenticationPrincipal Long userId,
             @RequestParam LocalDate date
     ) {
         WeeklyReportResponse response =
@@ -57,7 +58,7 @@ public class ReportController {
 
     @GetMapping("/streak")
     public ResponseEntity<ApiResponse<StreakResponse>> getStreak(
-            @RequestParam Long userId
+            @AuthenticationPrincipal Long userId
     ) {
         StreakResponse response = reportService.getStreak(userId);
 
@@ -72,7 +73,7 @@ public class ReportController {
 
     @GetMapping("/history")
     public ResponseEntity<ApiResponse<List<ReportHistoryResponse>>> getReportHistory(
-            @RequestParam Long userId
+            @AuthenticationPrincipal Long userId
     ) {
         List<ReportHistoryResponse> response =
                 reportService.getReportHistory(userId);
@@ -88,7 +89,7 @@ public class ReportController {
 
     @GetMapping("/{reportId}")
     public ResponseEntity<ApiResponse<DailyReportResponse>> getReportDetail(
-            @RequestParam Long userId,
+            @AuthenticationPrincipal Long userId,
             @PathVariable Long reportId
     ) {
         DailyReportResponse response =

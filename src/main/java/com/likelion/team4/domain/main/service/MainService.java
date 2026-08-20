@@ -195,12 +195,16 @@ public class MainService {
     }
 
     @Transactional
-    public NotificationReadResponse readNotification(Long notificationId) {
+    public NotificationReadResponse readNotification(Long userId, Long notificationId) {
 
         Notification notification = notificationRepository.findById(notificationId)
                 .orElseThrow(() ->
                         new CustomException(ErrorCode.NOTIFICATION_NOT_FOUND)
                 );
+
+        if (!notification.getUser().getId().equals(userId)) {
+            throw new CustomException(ErrorCode.FORBIDDEN_ACCESS);
+        }
 
         notification.read();
 

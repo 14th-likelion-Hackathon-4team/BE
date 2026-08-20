@@ -15,6 +15,7 @@ import com.likelion.team4.domain.chat.repository.AlternativeMissionRepository;
 import com.likelion.team4.domain.routine.dto.response.AlternativeMissionCompleteResponse;
 import com.likelion.team4.domain.routine.entity.Routine;
 import com.likelion.team4.domain.routine.repository.RoutineRepository;
+import com.likelion.team4.domain.routine.service.RoutineRecordService;
 import com.likelion.team4.domain.routinelog.entity.RoutineLog;
 import com.likelion.team4.domain.routinelog.service.RoutineLogProvisioner;
 import com.likelion.team4.global.exception.CustomException;
@@ -53,6 +54,7 @@ public class ChatService {
     private final AiChatMessageRepository aiChatMessageRepository;
     private final AlternativeMissionRepository alternativeMissionRepository;
     private final RoutineRepository routineRepository;
+    private final RoutineRecordService routineRecordService;
     private final RoutineLogProvisioner routineLogProvisioner;
     private final AiChatProvisioner aiChatProvisioner;
     private final MissionGenerationHelper missionGenerationHelper;
@@ -237,6 +239,13 @@ public class ChatService {
             // 동시 요청으로 다른 트랜잭션이 먼저 완료 처리한 경우
             throw new CustomException(ErrorCode.ALREADY_PROCESSED_MISSION);
         }
+
+        // 대체미션 완료 = 원래 루틴을 대신 수행한 것이므로, 그날의 RoutineRecord도 완료 처리
+        // (이걸 안 하면 자정 스케줄러가 PENDING 상태 그대로 INCOMPLETE로 덮어써버림)
+        routineRecordService.completeRoutineByAlternativeMission(
+                mission.getAiChat().getRoutineLog().getRoutine().getId(),
+                mission.getMissionDate()
+        );
 
         return AlternativeMissionCompleteResponse.builder()
                 .missionId(missionId)

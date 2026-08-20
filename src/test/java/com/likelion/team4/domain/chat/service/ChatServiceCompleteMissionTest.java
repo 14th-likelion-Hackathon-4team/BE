@@ -9,6 +9,7 @@ import com.likelion.team4.domain.chat.repository.AiChatRepository;
 import com.likelion.team4.domain.chat.repository.AlternativeMissionRepository;
 import com.likelion.team4.domain.routine.entity.Routine;
 import com.likelion.team4.domain.routine.repository.RoutineRepository;
+import com.likelion.team4.domain.routine.service.RoutineRecordService;
 import com.likelion.team4.domain.routinelog.entity.RoutineLog;
 import com.likelion.team4.domain.routinelog.service.RoutineLogProvisioner;
 import com.likelion.team4.domain.user.entity.User;
@@ -30,6 +31,7 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
@@ -48,6 +50,8 @@ class ChatServiceCompleteMissionTest {
     @Mock
     private RoutineRepository routineRepository;
     @Mock
+    private RoutineRecordService routineRecordService;
+    @Mock
     private RoutineLogProvisioner routineLogProvisioner;
     @Mock
     private AiChatProvisioner aiChatProvisioner;
@@ -63,12 +67,14 @@ class ChatServiceCompleteMissionTest {
 
     private static final Long OWNER_ID = 1L;
     private static final Long MISSION_ID = 40L;
+    private static final Long ROUTINE_ID = 100L;
 
     private AlternativeMission missionWithStatus(MissionStatus status) {
         User owner = User.builder().build();
         ReflectionTestUtils.setField(owner, "id", OWNER_ID);
 
         Routine routine = Routine.builder().user(owner).title("아침운동").build();
+        ReflectionTestUtils.setField(routine, "id", ROUTINE_ID);
 
         RoutineLog log = RoutineLog.builder()
                 .routine(routine)
@@ -110,6 +116,7 @@ class ChatServiceCompleteMissionTest {
 
         assertThat(response.isAlternativeMissionCompleted()).isTrue();
         assertThat(mission.getStatus()).isEqualTo(MissionStatus.COMPLETED);
+        verify(routineRecordService).completeRoutineByAlternativeMission(ROUTINE_ID, mission.getMissionDate());
     }
 
     @Test
