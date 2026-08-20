@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 
 @Service
 @RequiredArgsConstructor
@@ -24,6 +25,7 @@ public class RoutineRecordService {
     private final RoutineRepository routineRepository;
     private final RoutineRecordRepository routineRecordRepository;
     private final StreakService streakService;
+    private static final ZoneId SEOUL_ZONE = ZoneId.of("Asia/Seoul");
 
     public RoutineCompleteResponse completeRoutine(Long routineId) {
 
@@ -32,8 +34,8 @@ public class RoutineRecordService {
                         new CustomException(ErrorCode.ROUTINE_NOT_FOUND)
                 );
 
-        LocalDate today = LocalDate.now();
-        LocalDateTime completedAt = LocalDateTime.now();
+        LocalDate today = LocalDate.now(SEOUL_ZONE);
+        LocalDateTime completedAt = LocalDateTime.now(SEOUL_ZONE);
 
         RoutineRecord record = routineRecordRepository
                 .findByRoutine_IdAndRecordDate(routineId, today)
