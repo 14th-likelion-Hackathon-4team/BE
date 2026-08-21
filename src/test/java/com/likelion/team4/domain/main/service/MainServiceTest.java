@@ -6,16 +6,19 @@ import com.likelion.team4.domain.chat.entity.enums.MissionStatus;
 import com.likelion.team4.domain.chat.repository.AlternativeMissionRepository;
 import com.likelion.team4.domain.main.dto.MainResponse;
 import com.likelion.team4.domain.main.dto.TodayRoutineResponse;
+import com.likelion.team4.domain.main.entity.Notification;
 import com.likelion.team4.domain.main.repository.NotificationRepository;
 import com.likelion.team4.domain.routine.entity.Routine;
 import com.likelion.team4.domain.routine.entity.RoutineRecord;
 import com.likelion.team4.domain.routine.entity.enums.RoutineRecordStatus;
-import com.likelion.team4.domain.routine.repository.RoutineRecordRepository;
 import com.likelion.team4.domain.routine.repository.RoutineRepository;
+import com.likelion.team4.domain.routine.service.RoutineRecordProvisioner;
 import com.likelion.team4.domain.routinelog.entity.RoutineLog;
 import com.likelion.team4.domain.routinelog.repository.RoutineLogRepository;
 import com.likelion.team4.domain.user.entity.User;
 import com.likelion.team4.domain.user.repository.UserRepository;
+import com.likelion.team4.global.exception.CustomException;
+import com.likelion.team4.global.exception.ErrorCode;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -30,6 +33,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.when;
@@ -46,7 +50,7 @@ class MainServiceTest {
     @Mock
     private NotificationRepository notificationRepository;
     @Mock
-    private RoutineRecordRepository routineRecordRepository;
+    private RoutineRecordProvisioner routineRecordProvisioner;
     @Mock
     private UserRepository userRepository;
     @Mock
@@ -95,7 +99,7 @@ class MainServiceTest {
         when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
         when(routineRepository.findAllByUser_IdAndRepeatDaysContainingAndDeletedAtIsNull(any(), any()))
                 .thenReturn(List.of(routine));
-        when(routineRecordRepository.findByRoutine_IdAndRecordDate(anyLong(), any()))
+        when(routineRecordProvisioner.find(anyLong(), any()))
                 .thenReturn(Optional.of(routineRecord));
         when(alternativeMissionRepository
                 .findTopByAiChat_RoutineLog_Routine_IdAndMissionDateOrderByCreatedAtDesc(anyLong(), any()))
@@ -107,5 +111,46 @@ class MainServiceTest {
         assertThat(todayRoutine.getAlternativeMissionStatus()).isEqualTo("COMPLETED");
         assertThat(todayRoutine.getAlternativeMissionCompleted()).isTrue();
         assertThat(todayRoutine.getRoutineStatus()).isEqualTo("ALTERNATIVE_COMPLETED");
+    }
+
+    @Test
+    void 다른_사용자의_알림을_읽음처리하면_예외가_발생한다() {
+        User owner = User.builder().nickname("주인").build();
+        ReflectionTestUtils.setField(owner, "id", 1L);
+
+        Notification notification = Notification.builder()
+                .user(owner)
+                .content("루틴 알림")
+                .read(false)
+                .createdAt(LocalDateTime.now())
+                .build();
+        ReflectionTestUtils.setField(notification, "id", 50L);
+
+        when(notificationRepository.findById(50L)).thenReturn(Optional.of(notification));
+
+        assertThatThrownBy(() -> mainService.readNotification(2L, 50L))
+                .isInstanceOf(CustomException.class)
+                .extracting(e -> ((CustomException) e).getErrorCode())
+                .isEqualTo(ErrorCode.FORBIDDEN_ACCESS);
+    }
+
+    @Test
+    void 본인_알림은_정상적으로_읽음처리된다() {
+        User owner = User.builder().nickname("주인").build();
+        ReflectionTestUtils.setField(owner, "id", 1L);
+
+        Notification notification = Notification.builder()
+                .user(owner)
+                .content("루틴 알림")
+                .read(false)
+                .createdAt(LocalDateTime.now())
+                .build();
+        ReflectionTestUtils.setField(notification, "id", 50L);
+
+        when(notificationRepository.findById(50L)).thenReturn(Optional.of(notification));
+
+        var response = mainService.readNotification(1L, 50L);
+
+        assertThat(response.isRead()).isTrue();
     }
 }

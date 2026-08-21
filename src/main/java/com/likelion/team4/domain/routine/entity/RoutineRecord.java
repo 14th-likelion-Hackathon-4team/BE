@@ -7,6 +7,12 @@ import lombok.*;
 import java.time.LocalDate;
 
 @Entity
+@Table(
+        uniqueConstraints = @UniqueConstraint(
+                name = "uk_routine_record_routine_id_record_date",
+                columnNames = {"routine_id", "record_date"}
+        )
+)
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
@@ -27,6 +33,9 @@ public class RoutineRecord {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private RoutineRecordStatus status;
+
+    @Version
+    private Long version;
 
     public void complete() {
         this.status = RoutineRecordStatus.COMPLETED;

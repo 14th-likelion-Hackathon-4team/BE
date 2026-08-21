@@ -4,8 +4,9 @@ import com.likelion.team4.domain.main.dto.*;
 import com.likelion.team4.domain.routine.entity.Routine;
 import com.likelion.team4.domain.routine.entity.RoutineRecord;
 import com.likelion.team4.domain.routine.entity.enums.RoutineRecordStatus;
-import com.likelion.team4.domain.routine.repository.RoutineRecordRepository;
 import com.likelion.team4.domain.routine.repository.RoutineRepository;
+import com.likelion.team4.domain.routine.service.RoutineRecordProvisioner;
+import org.springframework.dao.DataIntegrityViolationException;
 import com.likelion.team4.domain.main.entity.Notification;
 import com.likelion.team4.domain.main.repository.NotificationRepository;
 import com.likelion.team4.domain.routinelog.entity.RoutineLog;
@@ -35,7 +36,7 @@ public class MainService {
 
     private final RoutineRepository routineRepository;
     private final NotificationRepository notificationRepository;
-    private final RoutineRecordRepository routineRecordRepository;
+    private final RoutineRecordProvisioner routineRecordProvisioner;
     private final UserRepository userRepository;
     private final RoutineLogRepository routineLogRepository;
     private final AlternativeMissionRepository alternativeMissionRepository;
@@ -61,21 +62,7 @@ public class MainService {
         List<TodayRoutineResponse> todayRoutines = routines.stream()
                 .map(routine -> {
 
-                    RoutineRecord routineRecord =
-                            routineRecordRepository
-                                    .findByRoutine_IdAndRecordDate(
-                                            routine.getId(),
-                                            todayDate
-                                    )
-                                    .orElseGet(() ->
-                                            routineRecordRepository.save(
-                                                    RoutineRecord.builder()
-                                                            .routine(routine)
-                                                            .recordDate(todayDate)
-                                                            .status(RoutineRecordStatus.PENDING)
-                                                            .build()
-                                            )
-                                    );
+                    RoutineRecord routineRecord = findOrCreateRecord(routine, todayDate);
 
                     // 오늘 해당 루틴의 최신 대체 미션 조회
                     AlternativeMission alternativeMission =
@@ -143,6 +130,21 @@ public class MainService {
                 .build();
     }
 
+    // 오늘자 RoutineRecord를 조회하고, 없으면 생성한다.
+    // 동시 요청으로 둘 다 "없음"으로 판단해 생성을 시도해도, DB 유니크 제약(routine_id, record_date)
+    // 위반 시 재조회해서 이미 생성된 레코드를 가져오므로 중복 생성되지 않는다.
+    private RoutineRecord findOrCreateRecord(Routine routine, LocalDate date) {
+        return routineRecordProvisioner.find(routine.getId(), date)
+                .orElseGet(() -> {
+                    try {
+                        return routineRecordProvisioner.create(routine, date);
+                    } catch (DataIntegrityViolationException e) {
+                        return routineRecordProvisioner.find(routine.getId(), date)
+                                .orElseThrow(() -> e);
+                    }
+                });
+    }
+
     private String getToday() {
         return switch (LocalDate.now(SEOUL_ZONE).getDayOfWeek()) {
             case MONDAY -> "MON";
@@ -195,12 +197,16 @@ public class MainService {
     }
 
     @Transactional
-    public NotificationReadResponse readNotification(Long notificationId) {
+    public NotificationReadResponse readNotification(Long userId, Long notificationId) {
 
         Notification notification = notificationRepository.findById(notificationId)
                 .orElseThrow(() ->
                         new CustomException(ErrorCode.NOTIFICATION_NOT_FOUND)
                 );
+
+        if (!notification.getUser().getId().equals(userId)) {
+            throw new CustomException(ErrorCode.FORBIDDEN_ACCESS);
+        }
 
         notification.read();
 

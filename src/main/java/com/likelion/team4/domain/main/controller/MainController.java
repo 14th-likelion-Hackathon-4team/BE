@@ -5,6 +5,7 @@ import com.likelion.team4.domain.main.service.MainService;
 import com.likelion.team4.global.response.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -19,7 +20,7 @@ public class MainController {
     // 메인페이지 조회
     @GetMapping
     public ResponseEntity<ApiResponse<MainResponse>> getMainPage(
-            @RequestParam Long userId
+            @AuthenticationPrincipal Long userId
     ) {
         MainResponse response = mainService.getMainPage(userId);
 
@@ -35,7 +36,7 @@ public class MainController {
     // 오늘 알림 목록 조회
     @GetMapping("/notifications/today")
     public ResponseEntity<ApiResponse<TodayNotificationListResponse>> getTodayNotifications(
-            @RequestParam Long userId
+            @AuthenticationPrincipal Long userId
     ) {
         TodayNotificationListResponse response =
                 mainService.getTodayNotifications(userId);
@@ -52,10 +53,11 @@ public class MainController {
     // 알림 읽음 처리
     @PatchMapping("/notifications/{notificationId}/read")
     public ResponseEntity<ApiResponse<NotificationReadResponse>> readNotification(
+            @AuthenticationPrincipal Long userId,
             @PathVariable Long notificationId
     ) {
         NotificationReadResponse response =
-                mainService.readNotification(notificationId);
+                mainService.readNotification(userId, notificationId);
 
         return ResponseEntity.ok(
                 ApiResponse.success(

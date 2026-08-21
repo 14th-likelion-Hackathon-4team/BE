@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
@@ -23,6 +24,8 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Transactional
 public class StreakService {
+
+    private static final ZoneId SEOUL_ZONE = ZoneId.of("Asia/Seoul");
 
     private final RoutineRecordRepository routineRecordRepository;
     private final UserRepository userRepository;
@@ -88,7 +91,7 @@ public class StreakService {
                 .orElseThrow(() ->
                                 new CustomException(ErrorCode.USER_NOT_FOUND));
 
-        LocalDate today = LocalDate.now();
+        LocalDate today = LocalDate.now(SEOUL_ZONE);
 
         List<RoutineRecord> records =
                 getCompletedRecords(
